@@ -1,0 +1,12 @@
+result
+result-*
+.direnv/
+*.qcow2
+*.log
+.env
+.env.*
+!.env.example
+secrets/
+*.age
+*.pem
+*.key
