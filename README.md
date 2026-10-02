@@ -1,8 +1,8 @@
 # geko-nix
 
 Configuração pessoal do geko: NixOS, Hyprland e Serpantinum. O alvo `nixos`
-e o alias `nixos-serpantinum` constroem o mesmo sistema. O perfil
-`nixos-pleamar` usa Pleamar-WM + Marea como desktop separado. Ryoku, XFCE e Hermes
+e o alias `serpantinum` constroem o mesmo sistema. O perfil
+`pleamar` usa Pleamar-WM + Marea como desktop separado. Ryoku, XFCE e Hermes
 foram removidos das declarações; dados pessoais não são apagados.
 
 ## Organização
@@ -40,7 +40,7 @@ Novos desktops podem ter módulos próprios e outputs na mesma flake, usando
 os módulos comuns. Não há perfil Ryoku. O perfil Pleamar usa o módulo upstream com
 `withMarea = true`; ele não importa Hyprland nem Serpantinum. Configurações
 do Pleamar permanecem em `~/.config/pleamar` segundo o upstream.
-Para construir esse perfil: `nix build .#nixosConfigurations.nixos-pleamar.config.system.build.toplevel`. As configurações Lua do Hyprland
+Para construir esse perfil: `nix build .#nixosConfigurations.pleamar.config.system.build.toplevel`. As configurações Lua do Hyprland
 são declarativas: editar pela interface não altera o arquivo gerado pelo HM.
 As preferências do Serpantinum são inicialmente semeadas pelo módulo upstream,
 mas depois permanecem editáveis na interface; o rebuild não sobrescreve um

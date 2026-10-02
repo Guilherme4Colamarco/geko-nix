@@ -56,7 +56,7 @@
     };
   in {
     nixosConfigurations.nixos = mkDesktop "serpantinum";
-    nixosConfigurations.nixos-serpantinum = mkDesktop "serpantinum";
-    nixosConfigurations.nixos-pleamar = mkDesktop "pleamar";
+    nixosConfigurations.serpantinum = mkDesktop "serpantinum";
+    nixosConfigurations.pleamar = mkDesktop "pleamar";
   };
 }
