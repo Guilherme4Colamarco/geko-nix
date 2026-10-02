@@ -1,85 +1,62 @@
 {
-  description = "Configuracao NixOS do geko";
-
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-  inputs.nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-  inputs.nix-flatpak.url = "github:gmodena/nix-flatpak";
-  inputs.home-manager = {
-    url = "github:nix-community/home-manager/release-26.05";
-    inputs.nixpkgs.follows = "nixpkgs";
+  description = "NixOS do geko com desktop modular Serpantinum";
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
+    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nix-flatpak.url = "github:gmodena/nix-flatpak";
+    home-manager = {
+      url = "github:nix-community/home-manager/release-26.05";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    chatgpt-desktop-app = {
+      url = "github:poeck/chatgpt-desktop-app-nix-flake/d23d08e1275566612fbac7487f18771dde415af2";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    astrovim = { url = "github:AstroNvim/template"; flake = false; };
+    pleamar-wm = {
+      url = "github:k4ditano/pleamar-wm/548b3fc226e65128770eef832b26142b33e23729";
+      inputs.marea.url = "github:k4ditano/marea-plm/d3c5398c99eaad9bb045d7f0838efd849fea2c6f";
+    };
+    serpantinum.url = "github:ilyamiro/serpantinum/225ea62e0545e25fa813d8409390d73588575b3c";
   };
-
-  inputs.astrovim = {
-    url = "github:AstroNvim/template";
-    flake = false;
-  };
-
-  inputs.hermesAgent.url = "github:NousResearch/hermes-agent";
-  inputs.hermesDesktop = {
-    url = "path:./agents";
-    inputs.nixpkgs.follows = "nixpkgs";
-    inputs.hermesAgent.follows = "hermesAgent";
-  };
-  inputs.ryoku = {
-    url = "github:aethctl/Ryoku-on-NixOS/main";
-    inputs.hermesAgent.follows = "hermesDesktop";
-  };
-
-  outputs = { ryoku, hermesAgent, nixpkgs, nixpkgs-unstable, nix-flatpak, home-manager, astrovim, ... }: {
-    nixosConfigurations.nixos = nixpkgs.lib.nixosSystem {
-      system = "x86_64-linux";
-      specialArgs = {
-        inherit hermesAgent;
-        unstablePkgs = import nixpkgs-unstable {
-          system = "x86_64-linux";
-          config.allowUnfree = true;
-        };
-      };
+  outputs = inputs@{ nixpkgs, home-manager, nix-flatpak, serpantinum, ... }: let
+    system = "x86_64-linux";
+    unstablePkgs = import inputs.nixpkgs-unstable { inherit system; config.allowUnfree = true; };
+    desktopPkgs = import serpantinum.inputs.nixpkgs { inherit system; config.allowUnfree = true; };
+    mkDesktop = desktop: nixpkgs.lib.nixosSystem {
+      inherit system;
+      specialArgs = { inherit inputs unstablePkgs desktopPkgs; };
       modules = [
         nix-flatpak.nixosModules.nix-flatpak
         home-manager.nixosModules.home-manager
-        ryoku.nixosModules.default
-        ./ryoku.nix
-        ./agents/hermes.nix
         ./configuration.nix
+        ./modules/core
+        ./modules/hardware/nvidia-desktop.nix
+        ./modules/services/docker.nix
+        ./modules/desktop/options.nix
+        ./modules/desktop/gaming.nix
         ./programs/stables.nix
         ./programs/unstables.nix
-        ./programs/games.nix
-        ./programs/flatpaks.nix
         ./programs/development.nix
-        ({ pkgs, ... }: {
-          home-manager.users.geko = {
-            home.stateVersion = "26.05";
-            home.packages = [ pkgs.mcp-nixos ];
-            xdg.enable = true;
-            xdg.configFile."astronvim".source = pkgs.runCommand "astronvim-config" { } ''
-              cp -r ${astrovim} $out
-              chmod -R u+w $out
-              substituteInPlace $out/lua/lazy_setup.lua \
-                --replace-fail 'ui = { backdrop = 100 },' \
-                  'lockfile = vim.fn.stdpath("state") .. "/lazy-lock.json", ui = { backdrop = 100 },'
-            '';
-          };
-        })
-        ({ lib, ... }: {
-          programs.ryoku.updateFlake = "/home/geko/Documentos/geko-nix";
-
-          xdg.mime.defaultApplications = {
-            "text/html" = "brave-origin.desktop";
-            "x-scheme-handler/http" = "brave-origin.desktop";
-            "x-scheme-handler/https" = "brave-origin.desktop";
-          };
-
-          # Ryoku's environment.etc entry conflicts with NixOS's
-          # /etc/systemd/user symlink. Add the setting as a user unit drop-in.
-          environment.etc."systemd/user/xdg-desktop-portal-gnome.service.d/10-ryoku.conf".enable =
-            lib.mkForce false;
-          systemd.user.services.xdg-desktop-portal-gnome = {
-            overrideStrategy = "asDropin";
-            serviceConfig.UnsetEnvironment = "GDK_BACKEND";
-          };
-        })
-      ];
+        ./programs/flatpaks.nix
+        ./programs/games.nix
+        ./programs/faculdade.nix
+        {
+          home-manager.useGlobalPkgs = true;
+          home-manager.useUserPackages = true;
+          home-manager.backupFileExtension = "before-geko-nix";
+          home-manager.extraSpecialArgs = { inherit inputs; };
+          home-manager.users.geko = import ./home;
+        }
+      ] ++ (if desktop == "serpantinum" then [
+        serpantinum.nixosModules.default ./modules/desktop/serpantinum.nix
+      ] else [
+        inputs.pleamar-wm.nixosModules.default ./modules/desktop/pleamar.nix
+      ]);
     };
+  in {
+    nixosConfigurations.nixos = mkDesktop "serpantinum";
+    nixosConfigurations.nixos-serpantinum = mkDesktop "serpantinum";
+    nixosConfigurations.nixos-pleamar = mkDesktop "pleamar";
   };
 }

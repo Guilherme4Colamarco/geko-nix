@@ -17,7 +17,6 @@
     ddcui
     # Nix-packaged agent-browser uses the NixOS dynamic loader, unlike Hermes's generic Linux bundle.
     agent-browser
-    netbeans
     # Keep Ryoku/Hyprland's GNOME file-manager and keyring dependencies
     # available even when Pantheon is disabled.
     nautilus
