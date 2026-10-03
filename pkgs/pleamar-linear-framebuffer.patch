@@ -1,0 +1,21 @@
+--- a/src/session.rs
++++ b/src/session.rs
+@@ -135,7 +135,17 @@
+                 wgpu::TextureUses::UNINITIALIZED,
+             )?;
+             let flags = if bo.modifier() == gbm::Modifier::Invalid { FbCmd2Flags::empty() } else { FbCmd2Flags::MODIFIERS };
+-            let fb = self.drm.add_planar_framebuffer(&bo, flags).map_err(|e| format!("the monitor does not take the buffer: {e}"))?;
++            let fb = self.drm.add_planar_framebuffer(&bo, flags).or_else(|first| {
++                // Some virtual/display-only drivers reject explicit linear
++                // modifiers. Legacy ADDFB describes this same XRGB buffer.
++                // Do not call ADDFB2 without flags on a modifier-bearing BO:
++                // drm-rs correctly rejects that inconsistent representation.
++                if modifier == 0 && !flags.is_empty() {
++                    self.drm.add_framebuffer(&bo, 24, 32)
++                } else {
++                    Err(first)
++                }
++            }).map_err(|e| format!("the monitor does not take the buffer: {e}"))?;
+             self.buffers.push(Buffer { _bo: bo, fb, texture });
+         }
+         println!("session · {}: {w}×{h} at {} Hz, three buffers of the card (modifier {:#x})", self.name, self.mode.vrefresh(), wanted[0]);

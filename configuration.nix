@@ -52,25 +52,13 @@
   # Enable the X11 windowing system.
   services.xserver.enable = true;
 
-  # GeForce GTX 1660 Ti (Turing): use the NVIDIA driver for X11 and Wayland.
-  hardware.graphics.enable = true;
-  services.xserver.videoDrivers = [ "nvidia" ];
-  hardware.nvidia = {
-    modesetting.enable = true;
-    open = true;
-  };
-
   # Allow DDC/CI control of the external monitor's hardware brightness.
   hardware.i2c.enable = true;
 
   # Grant the active session access to Logitech receiver HID++ devices (Solaar).
   hardware.logitech.wireless.enable = true;
 
-  # Hyprland/Ryoku remains the primary desktop; XFCE is a lightweight
-  # X11 fallback session. Pantheon is intentionally disabled.
   services.displayManager.sddm.enable = true;
-  services.desktopManager.pantheon.enable = false;
-  services.xserver.desktopManager.xfce.enable = true;
 
   # Configure keymap in X11
   services.xserver.xkb = {

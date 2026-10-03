@@ -1,0 +1,12 @@
+library Results {
+    component Result(h: record, width: number) {
+        size: width, 40
+        box hit { from: 0, 0; size: width, 40; corner: 13; color: if(sel == h.index, orange, gold); opacity: if(sel == h.index, 0.7, 0.1); cursor: pointer }
+        text h.name { family: "DejaVu Sans"; anchor: left center; at: 48, 16; size: 14; weight: 600; width: width - 145; lines: 1; color: if(sel == h.index, darkink, ink) }
+        text h.detail { family: "DejaVu Sans"; anchor: left center; at: 48, 32; size: 10; width: width - 145; lines: 1; color: if(sel == h.index, darkink, ink); opacity: 0.75 }
+        image h.icon { at: 12, 8; size: 24, 24 }
+        image h.preview { at: width - 83, 3; size: 70, 34 }
+        on enter hit { sel = h.index }
+        on press hit { emit activate(h.index) }
+    }
+}

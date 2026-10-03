@@ -1,0 +1,18 @@
+library HoneyMaterial {
+    component Honey(x: number, w: number, h: number, motion: number = 0) {
+        body {
+            color: honey; opacity: tint
+            glass: glassiness; lens: frost; refraction: refract * thickness
+            dispersion: 0.04; dome: 0.08 * thickness; ripple: 0.3 * deform
+            rim: 8.000%; light: 0.2, 0.2, 0.6
+            shadow: 0, 3, 8, shade
+            box { from: x, -30; size: w, h + 30; corner: roundness }
+            ellipse { at: x + w * 0.24, h - 2 + motion * 8; radius: 21 * thickness; scale: 1, 0.7 + motion * 0.4; blend: 20; show: dropcount > 0 }
+            ellipse { at: x + w * 0.69, h + motion * 10; radius: 15 * thickness; scale: 1, 1 + motion * 0.6; blend: 18; show: dropcount > 1 }
+            ellipse { at: x + w * 0.87, h - 8 + motion * 5; radius: 12 * thickness; blend: 14; show: dropcount > 2 }
+        }
+        // Warm light and tiny trapped bubbles; no continuously running shader.
+        ellipse { at: x + w * 0.17, 12; radius: 3; color: gold; opacity: 0.45 }
+        ellipse { at: x + w * 0.80, 19; radius: 2; color: gold; opacity: 0.35 }
+    }
+}

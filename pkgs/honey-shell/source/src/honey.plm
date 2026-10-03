@@ -1,0 +1,176 @@
+language 0.2
+import "themes/active.plm"
+import "components/material.plm"
+import "components/cava.plm"
+import "components/controls.plm"
+import "components/tray.plm"
+import "components/power.plm"
+import "components/result.plm"
+scene Honey {
+
+    surface main {
+        size: full, full; anchor: top; level: top, overlay while panel > 0
+        reserve: -1; rate: 60; keyboard: exclusive while panel > 0
+    permissions { services: "clock", "apps", "apps.launch", "audio", "audio.*", "brightness", "brightness.level", "tray", "tray.*", "network", "bluetooth"; run: "python3" }
+    service clock { time: text = "--:--" }
+    fact previewphase = -1
+    fact panel = 0
+    fact target = 0
+    fact nextpanel = 0
+    fact mode = 0
+    fact capacity = 7
+    fact sel = 0
+    fact confirm = 0
+    fact demo = true
+    fact reduced = false
+    fact cavaon = true
+    fact controlson = true
+    fact clockon = true
+    fact trayon = true
+    fact poweron = true
+    fact audioavailable = true
+    text traybar = "Tray · Wi-Fi · BT"
+    fact volume = 0.54
+    fact brightness = 0.68
+    fact backlight = true
+    fact muted = false
+    fact wifion = false
+    fact bton = false
+    fact energy = 0
+    text query = ""
+    text status = "Preparando serviços…"
+    text modename = "Aplicativos"
+    text backend = "DEMO · isolado"
+    text configerror = ""
+    text commandout = ""
+    text mutelabel = "Som ativo"
+    text traytitle = "Tray"
+    text mediastatus = "Cava · visualizador"
+    model hits max 7 { id: text; name: text; detail: text; kind: text; value: text; icon: image 24, 24; preview: image 84, 48 }
+    model bands max 12 { level: number }
+    model traymini max 5 { key: text; name: text; icon: image 22, 22 }
+    model icons max 5 { key: text; name: text; icon: image 22, 22 }
+    model traymenu max 8 { id: number; name: text; enabled: bool; key: text }
+    event control ->
+    event request ->
+    event settled ->
+    event resized ->
+    event activate ->
+    event choosemode ->
+    event volume_set ->
+    event brightness_set ->
+    event mute ->
+    event power_action ->
+    event tray_action ->
+    event tray_context ->
+    event tray_click ->
+    event toggle
+    event test_launcher
+    event test_controls
+    event test_power
+    event test_tray
+    event test_cava
+    figure bluetooth = file "icons/bluetooth.svg"
+    figure lock = file "icons/lock.svg"
+    figure logout = file "icons/logout.svg"
+    figure moon = file "icons/moon.svg"
+    figure muted = file "icons/muted.svg"
+    figure power = file "icons/power.svg"
+    figure restart = file "icons/restart.svg"
+    figure sun = file "icons/sun.svg"
+    figure volume = file "icons/volume.svg"
+    figure wifi = file "icons/wifi.svg"
+    shader meniscus = file "shaders/meniscus.wgsl"
+    let ww = main.width
+    let hh = main.height
+    let compact = ww < 1400
+    let pw = min(panelwidth, ww * 0.44)
+    let cx = ww * 0.5
+    let left = cx - pw * 0.5
+    let ph = min(panelheight, hh - 100)
+    prop centerhot = 0 ~quick
+    follow centerhot = if(launcher_hit.hover, 1, 0)
+    prop audioflow = 0 ~calm
+    follow audioflow = if(reduced, 0, energy * 0.2)
+    prop melt = 0 ~viscous
+    prop drop = 0 ~droplet
+    follow melt = if(previewphase >= 0, clamp(previewphase, 0, 1), if(target == 1, 1, 0))
+    follow drop = melt
+    prop controls = 0 ~viscous
+    prop control_drop = 0 ~droplet
+    follow controls = if(target == 2, 1, 0)
+    follow control_drop = controls
+    prop tray = 0 ~viscous
+    follow tray = if(target == 3, 1, 0)
+    prop power = 0 ~viscous
+    follow power = if(target == 4, 1, 0)
+    prop media = 0 ~viscous
+    follow media = if(target == 5, 1, 0)
+    let centralw = mix(if(compact, 190, 270), pw, melt)
+    let centralx = cx - centralw * 0.5
+    let centralh = 58 + (ph - 58) * melt
+    let revealed = clamp((melt - 0.6) / 0.4, 0, 1)
+    let sidex = max(ww * 0.24 - spacing, 150)
+    let trayx = min(ww * 0.73 + spacing, ww - if(compact, 210, 310))
+    let rightx = ww - if(compact, 100, 190)
+    let cw = min(300, ww * 0.25)
+    // Declared first: catches outside clicks only while a panel is open.
+    zone box outside { from: 0, 0; size: ww, hh; active: panel > 0 }
+    on press outside { emit request(0) }
+    // Transparent gaps stay pass-through in idle.
+    CavaPanel()
+    ControlsPanel()
+    // The same physical central body, in idle and launcher; no detached card.
+    Honey(centralx, centralw, centralh, ((drop - melt) * 5 + centerhot * 0.15) * deform)
+    shader meniscus { at: centralx, 0; size: centralw, centralh; values: melt, roundness; colors: gold; opacity: melt }
+    zone box launcher_hit { from: cx - if(compact, 95, 135), 0; size: if(compact, 190, 270), 64; cursor: pointer; active: panel != 1 }
+    on press launcher_hit { emit request(1) }
+    text clock.time { family: "DejaVu Sans"; at: cx, centralh - 25; anchor: center; size: 28 + melt * 8; weight: 500; color: ink; show: clockon }
+    group {
+        opacity: revealed
+        zone box launcher_inside { from: left, 0; size: pw, ph }
+        box { from: left + 24, 20; size: pw - 48, 55; corner: 27; color: orange }
+        input query { at: left + 46, 36; width: pw - 92; size: 19; color: darkink; placeholder: "Buscar…"; selection: gold }
+        text modename { family: "DejaVu Sans"; anchor: left center; at: left + 30, 100; size: 13; weight: 700; color: ink }
+        repeat i in 0..6 {
+            box mode.$i { from: left + 24 + i * (pw - 48) / 6, 113; size: (pw - 48) / 6 - 4, 28; corner: 12; color: if(mode == i, orange, gold); opacity: if(mode == i, 0.9, 0.16); cursor: pointer }
+            on press mode.$i { emit choosemode(i) }
+        }
+        text "Apps" { family: "DejaVu Sans"; anchor: left center; at: left + 36, 132; size: 11; color: ink }
+        text "Arquivos" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + (pw - 48) / 6, 132; size: 11; color: ink }
+        text "Comandos" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 2 * (pw - 48) / 6, 132; size: 11; color: ink }
+        text "Ajustes" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 3 * (pw - 48) / 6, 132; size: 11; color: ink }
+        text "Emoji" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 4 * (pw - 48) / 6, 132; size: 11; color: ink }
+        text "Clipboard" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 5 * (pw - 48) / 6, 132; size: 11; color: ink }
+        column results { at: left + 24, 150; gap: 3
+            for h in hits { Result(h, pw - 48) }
+        }
+        text commandout { family: "DejaVu Sans"; anchor: left center; at: left + 30, 169; size: 13; width: pw - 65; lines: 9; color: ink; show: mode == 2 }
+        text status { family: "DejaVu Sans"; anchor: left center; at: left + 30, ph - 72; size: 11; width: pw - 60; lines: 2; color: ink }
+        text "↑ ↓ selecionar · Enter executar · Esc fechar" { family: "DejaVu Sans"; anchor: left center; at: left + 30, ph - 47; size: 10; color: ink }
+    }
+    TrayPanel()
+    PowerPanel()
+    text backend { family: "DejaVu Sans"; anchor: left center; at: 16, hh - 22; size: 11; color: gold; opacity: 0.85; show: demo }
+    text configerror { family: "DejaVu Sans"; anchor: left center; at: 16, hh - 44; size: 12; color: #ffbc82; width: ww - 32; lines: 2 }
+    text status { family: "DejaVu Sans"; at: ww * .5, hh - 25; anchor: center; size: 12; color: gold; width: ww * .6; show: panel != 1 }
+    on change ph { capacity = min(7, max(1, floor((ph - 235) / 43))); emit resized }
+    // Close through the outside zone or Esc. A compositor may deliver a
+    // delayed focus loss from the previous panel during a panel handoff.
+    on key Escape { emit request(0) }
+    on key Down { sel = min(sel + 1, max(0, hits.count - 1)) }
+    on key Up { sel = max(0, sel - 1) }
+    on key Tab { emit choosemode(mod(mode + 1, 6)) }
+    on toggle { emit request(if(panel == 1, 0, 1)) }
+    on test_launcher { emit request(1) }
+    on test_controls { emit request(2) }
+    on test_tray { emit request(3) }
+    on test_power { emit request(4) }
+    on test_cava { emit request(5) }
+    on change melt while target == 0 and panel == 1 and abs(melt) < 0.008 { emit settled }
+    on change controls while target == 0 and panel == 2 and abs(controls) < 0.008 { emit settled }
+    on change tray while target == 0 and panel == 3 and abs(tray) < 0.008 { emit settled }
+    on change power while target == 0 and panel == 4 and abs(power) < 0.008 { emit settled }
+    on change media while target == 0 and panel == 5 and abs(media) < 0.008 { emit settled }
+}
+}

@@ -1,0 +1,9 @@
+language 0.2
+// A full-height surface anchors both vertical edges, so its reserve is ignored.
+// This separate, transparent client keeps the top strip without lens capture.
+scene HoneyReserve {
+    surface reservation {
+        size: full, 1; anchor: top; level: top; reserve: 0; rate: 1; keyboard: none
+        box { from: 0, 0; size: 1, 1; color: #000000; opacity: 0 }
+    }
+}

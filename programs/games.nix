@@ -32,13 +32,12 @@ let
 in
 {
   programs.steam = {
-    enable = true;
     package = unstablePkgs.steam;
     extraCompatPackages = with unstablePkgs; [ proton-ge-bin dwproton proton-cachyos ];
   };
 
-  environment.systemPackages = with unstablePkgs; [
-    heroic
-    hydralauncher
-  ];
+  mySystem.gaming = {
+    enable = true;
+    launchers = [ "steam" "heroic" "hydra" ];
+  };
 }

@@ -1,0 +1,33 @@
+library TrayPanelLibrary {
+    component TrayPanel {
+    group { opacity: 1; show: trayon
+    prop hot = 0 ~quick
+    follow hot = if(tray_hit.hover, 1, 0)
+
+        Honey(trayx, mix(if(compact, 90, 175), 280, tray), 38 + tray * 370, (tray * 0.4 + hot * 0.15) * deform)
+        zone box tray_hit { from: trayx, 0; size: if(compact, 90, 175), 38; cursor: pointer }
+        on press tray_hit { emit request(3) }
+        figure wifi { at: trayx + 27, 22; size: 22, 22; color: ink; opacity: if(wifion, 1, .4) }
+        figure bluetooth { at: trayx + 61, 22; size: 20, 20; color: ink; opacity: if(bton, 1, .4) }
+        for t in traymini {
+            image t.icon { at: trayx + 87 + t.index * 28, 11; size: 22, 22; show: not compact and t.index < 2 }
+        }
+        group { opacity: clamp((tray - 0.6) / 0.4, 0, 1)
+            zone box tray_inside { from: trayx, 38; size: 280, 365 }
+            text traytitle { family: "DejaVu Sans"; anchor: left center; at: trayx + 20, 77; size: 21; color: ink }
+            for t in icons {
+                box item.$t.index { from: trayx + 16, 100 + t.index * 37; size: 248, 32; corner: 12; color: gold; opacity: 0.16; cursor: pointer }
+                image t.icon { at: trayx + 23, 104 + t.index * 37; size: 22, 22 }
+                text t.name { family: "DejaVu Sans"; anchor: left center; at: trayx + 56, 122 + t.index * 37; size: 13; color: ink; width: 195; lines: 1 }
+                on press item.$t.index { emit tray_action(t.index) }
+                on press right item.$t.index { emit tray_context(t.index) }
+            }
+            for m in traymenu {
+                box menu.$m.index { from: trayx + 16, 105 + m.index * 32; size: 248, 28; corner: 10; color: gold; opacity: 0.15; cursor: pointer; active: m.enabled }
+                text m.name { family: "DejaVu Sans"; anchor: left center; at: trayx + 30, 123 + m.index * 32; size: 12; color: ink; opacity: if(m.enabled, 1, 0.4); width: 222; lines: 1 }
+                on press menu.$m.index { emit tray_click(m.index) }
+            }
+        }
+    }
+    }
+}

@@ -1,0 +1,8 @@
+scene CaptureProbe {
+    surface probe {
+        size: 96, 96; anchor: bottom_right; level: overlay; keyboard: none
+        shader test = file "shaders/capture-probe.wgsl"
+        shader test { at: 0, 0; size: 96, 96 }
+        text "BG" { at: 48, 48; anchor: center; family: "DejaVu Sans"; size: 20; color: #ffffff }
+    }
+}

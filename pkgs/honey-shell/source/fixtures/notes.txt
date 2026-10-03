@@ -1,0 +1,1 @@
+Arquivo de teste para pesquisar no launcher. A busca usa apenas o nome do arquivo.

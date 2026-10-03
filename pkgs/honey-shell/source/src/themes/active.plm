@@ -1,0 +1,24 @@
+// Generated from validated workspace configuration.
+library HoneyTheme {
+    let darkink = #281a0c
+    let honey = #b97912
+    let gold = #ffdb85
+    let ink = #fff0ca
+    let orange = #ffad28
+    let tint = 0.88
+    let glassiness = 0.72
+    let refract = 0.75
+    let frost = 0.6
+    let edgeglow = 0.08
+    let shade = 0.22
+    let thickness = 1.0
+    let roundness = 40
+    let dropcount = 3
+    let deform = 1.0
+    let panelwidth = 620
+    let panelheight = 550
+    let spacing = 14
+    let reserve = 0
+    spring viscous = 160.000, 15.540
+    spring droplet = 104.000, 11.655
+}
