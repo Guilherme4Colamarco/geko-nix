@@ -1,7 +1,10 @@
-{ ... }: {
-  programs.pleamar-wm = { enable = true; withMarea = true; };
+{ pkgs, inputs, ... }: {
+  imports = [ ./honey-common.nix ];
+  programs.pleamar-wm = {
+    enable = true;
+    withMarea = false;
+    package = import ../../pkgs/pleamar-wm.nix { upstream = inputs.pleamar-wm.packages.${pkgs.stdenv.hostPlatform.system}.pleamar-wm; };
+  };
   services.displayManager.defaultSession = "pleamar-wm";
-  services.gnome.gnome-keyring.enable = true;
-  services.upower.enable = true;
-  # A sessão upstream inicia Marea. Nenhum serviço QS é importado aqui.
+  home-manager.users.geko.imports = [ ../../home/desktop/pleamar.nix ];
 }

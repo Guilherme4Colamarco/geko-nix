@@ -50,13 +50,26 @@
         }
       ] ++ (if desktop == "serpantinum" then [
         serpantinum.nixosModules.default ./modules/desktop/serpantinum.nix
-      ] else [
+      ] else if desktop == "pleamar" then [
         inputs.pleamar-wm.nixosModules.default ./modules/desktop/pleamar.nix
+      ] else if desktop == "niri" then [
+        ./modules/desktop/niri.nix
+      ] else [
+        ./modules/desktop/hyprland.nix
       ]);
     };
   in {
+    checks.${system} = nixpkgs.lib.genAttrs [ "honey-pleamar" "honey-pleamar-core" "honey-niri" "honey-hyprland" ] (name:
+      import ./tests/honey-vm.nix {
+        pkgs = nixpkgs.legacyPackages.${system};
+        inherit inputs desktopPkgs unstablePkgs;
+        compositor = if name == "honey-pleamar-core" then "pleamar" else nixpkgs.lib.removePrefix "honey-" name;
+        requireCapture = name != "honey-pleamar-core";
+      });
     nixosConfigurations.nixos = mkDesktop "serpantinum";
     nixosConfigurations.serpantinum = mkDesktop "serpantinum";
     nixosConfigurations.pleamar = mkDesktop "pleamar";
+    nixosConfigurations.niri = mkDesktop "niri";
+    nixosConfigurations.hyprland = mkDesktop "hyprland";
   };
 }
