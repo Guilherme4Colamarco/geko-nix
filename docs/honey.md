@@ -47,6 +47,8 @@ No Pleamar-wm, Super+Tab abre overview e Super+Ctrl+F alterna o monitor livre. N
 
 Não há timers de idle. Suspensão pelo painel exige bloqueio bem sucedido primeiro. Reboot e shutdown exigem confirmação dentro do painel. Swaylock usa PAM do NixOS; o Honey não implementa autenticação própria.
 
+O catálogo e a validação de aplicativos continuam no serviço oficial `apps.launch`. O pacote intercepta sua chamada `setsid -f sh -c` e inicia o aplicativo em um serviço transitório separado pelo systemd. `setsid` sozinho não sai do grupo de processos do serviço: reiniciar Honey encerrava auxiliares de aplicativos Electron, incluindo o GPT. Agora aplicativos pertencem à sessão gráfica, e reiniciar o shell só encerra seus próprios helpers. Outras chamadas de `setsid` usam o binário original.
+
 ## Compatibilidade visual
 
 A reserva superior usa uma superfície transparente de 1 pixel em `honey-reserve.service`, ancorada apenas ao topo, com zona exclusiva de 80 pixels lógicos. A superfície principal ignora zonas exclusivas para manter o mel na origem da tela. Uma superfície de altura total ancora ambas as bordas verticais; sua reserva seria ignorada pelos compositores.
