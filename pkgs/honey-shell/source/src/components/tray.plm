@@ -5,16 +5,25 @@ library TrayPanelLibrary {
     follow hot = if(tray_hit.hover, 1, 0)
 
         Honey(trayx, mix(if(compact, 90, 175), 280, tray), 38 + tray * 370, (tray * 0.4 + hot * 0.15) * deform)
+        zone box tray_body { from: trayx, 0; size: mix(if(compact, 90, 175), 280, tray), 38 + tray * 370; active: panel == 3 }
         zone box tray_hit { from: trayx, 0; size: if(compact, 90, 175), 38; cursor: pointer }
         on press tray_hit { emit request(3) }
         figure wifi { at: trayx + 27, 22; size: 22, 22; color: ink; opacity: if(wifion, 1, .4) }
         figure bluetooth { at: trayx + 61, 22; size: 20, 20; color: ink; opacity: if(bton, 1, .4) }
+        zone box wifi_hit { from: trayx + 16, 11; size: 22, 22; cursor: pointer }
+        on press wifi_hit { emit tray_wifi }
+        zone box bt_hit { from: trayx + 51, 12; size: 20, 20; cursor: pointer }
+        on press bt_hit { emit tray_bt }
         for t in traymini {
             image t.icon { at: trayx + 87 + t.index * 28, 11; size: 22, 22; show: not compact and t.index < 2 }
+            zone box mini.$t.index { from: trayx + 87 + t.index * 28, 11; size: 22, 22; cursor: pointer; show: not compact and t.index < 2 }
+            on press mini.$t.index { emit tray_action(t.index) }
         }
         group { opacity: clamp((tray - 0.6) / 0.4, 0, 1)
             zone box tray_inside { from: trayx, 38; size: 280, 365 }
             text traytitle { family: "DejaVu Sans"; anchor: left center; at: trayx + 20, 77; size: 21; color: ink }
+            zone box tray_back_hit { from: trayx + 16, 64; size: 248, 28; cursor: pointer }
+            on press tray_back_hit { emit tray_back }
             for t in icons {
                 box item.$t.index { from: trayx + 16, 100 + t.index * 37; size: 248, 32; corner: 12; color: gold; opacity: 0.16; cursor: pointer }
                 image t.icon { at: trayx + 23, 104 + t.index * 37; size: 22, 22 }

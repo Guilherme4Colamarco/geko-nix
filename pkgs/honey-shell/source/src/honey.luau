@@ -61,6 +61,47 @@ local function search()
     end
 end
 
+local function tray_rows()
+    local rows = {}
+    for i, t in ipairs(trayItems) do
+        if i <= 5 then rows[#rows + 1] = {key=t.key, name=(t.title ~= nil and t.title ~= "" and t.title) or t.id or t.name or "", icon=t.icon or ""} end
+    end
+    return rows
+end
+
+local function show_tray_list()
+    menus = {}
+    model.traymenu = {}
+    local rows = tray_rows()
+    model.icons = rows
+    model.traymini = rows
+    text.traytitle = #rows > 0 and "Tray" or "Nenhum item no tray"
+end
+
+local function show_tray_menu(index)
+    local t = trayItems[index + 1]
+    if not t then return end
+    menus = {}
+    if fact.demo then
+        menus = {{id=1, name="Abrir", enabled=true, key=t.key}, {id=2, name="Opção indisponível", enabled=false, key=t.key}}
+    else
+        local function flatten(items, prefix)
+            for _, m in ipairs(items) do
+                if not m.separator and #menus < 8 then
+                    menus[#menus + 1] = {id=m.id, name=prefix .. m.label, enabled=m.enabled, key=t.key}
+                    if m.children then flatten(m.children, prefix .. "› ") end
+                end
+            end
+        end
+        local ok, data = pcall(function() return sys.ask("tray.menu", t.key) end)
+        if not ok then text.status = "Menu: " .. tostring(data); return end
+        if data then flatten(data, "") end
+    end
+    model.icons = {}
+    model.traymenu = menus
+    text.traytitle = t.title or t.id or "Menu"
+end
+
 local function opened(which)
     closing = false
     fact.previewphase = -1
@@ -68,15 +109,7 @@ local function opened(which)
     fact.target = which
     fact.confirm = 0
     text.commandout = ""
-    if which == 3 then
-        menus = {}; model.traymenu = {}
-        local rows = {}
-        for i, t in ipairs(trayItems) do
-            if i <= 5 then rows[#rows + 1] = {key=t.key,name=t.title or t.id,icon=t.icon or ""} end
-        end
-        model.icons = rows; model.traymini = rows
-        text.traytitle = #rows > 0 and "Tray" or "Nenhum item no tray"
-    end
+    if which == 3 then show_tray_list() end
     if which == 1 then
         after(120, function() if fact.panel == 1 and fact.target == 1 then focus("query") end end)
         search()
@@ -193,7 +226,7 @@ local function live_services()
     watch("network", function(n)
         if fact.demo then return end
         wifi = n.online and (n.kind == "wifi" and "Wi-Fi" or "Rede") or "Offline"
-        fact.wifion = n.online or false
+        fact.wifion = n.wifi == true
         text.traybar = wifi .. " · " .. bluetooth
     end)
     watch("bluetooth", function(b)
@@ -213,12 +246,13 @@ local function live_services()
     end, function() fact.backlight = false end)
     watch("tray", function(list)
         if fact.demo then return end
-        trayItems = list; local rows = {}
-        for i, t in ipairs(list) do
-            if i <= 5 then rows[#rows + 1] = {key=t.key, name=t.title ~= "" and t.title or t.id, icon=t.icon} end
+        trayItems = list
+        local rows = tray_rows()
+        model.traymini = rows
+        if #menus == 0 then
+            model.icons = rows
+            text.traytitle = #rows > 0 and "Tray" or "Nenhum item no tray"
         end
-        model.icons = rows; model.traymini = rows
-        text.traytitle = #rows > 0 and "Tray" or "Nenhum item no tray"
     end, function() text.traytitle = "Tray indisponível" end)
 end
 
@@ -291,31 +325,48 @@ on("power_action", function(index)
     end)
 end)
 
-on("tray_action", function(index)
-    local t=trayItems[index+1];if not t then return end
-    if fact.demo then text.status="[demo] ativar "..t.title else pcall(function() sys.call("tray.activate",t.key) end) end
-end)
-on("tray_context", function(index)
-    local t=trayItems[index+1];if not t then return end
-    menus={}
-    if fact.demo then menus={{id=1,name="Abrir",enabled=true,key=t.key},{id=2,name="Opção indisponível",enabled=false,key=t.key}}
-    else
-        local function flatten(items,prefix)
-            for _,m in ipairs(items) do
-                if not m.separator and #menus<8 then
-                    menus[#menus+1]={id=m.id,name=prefix..m.label,enabled=m.enabled,key=t.key}
-                    if m.children then flatten(m.children,prefix.."› ") end
-                end
-            end
-        end
-        local ok, data=pcall(function() return sys.ask("tray.menu",t.key) end)
-        if ok and data then flatten(data,"") end
+on("tray_wifi", function()
+    if fact.demo then
+        fact.wifion = not fact.wifion
+        text.status = fact.wifion and "[demo] Wi-Fi ligado" or "[demo] Wi-Fi desligado"
+        return
     end
-    model.icons={};model.traymenu=menus;text.traytitle=t.title or t.id
+    local nextOn = not fact.wifion
+    local ok, err = pcall(function() sys.call("network.wifi", nextOn) end)
+    if ok then fact.wifion = nextOn; text.status = nextOn and "Wi-Fi ligado" or "Wi-Fi desligado"
+    else text.status = "Wi-Fi: " .. tostring(err) end
 end)
-on("tray_click",function(index)
-    local m=menus[index+1];if not m or not m.enabled then return end
-    if fact.demo then text.status="[demo] menu "..m.name else pcall(function() sys.call("tray.menu_click",m.key,m.id) end) end
+on("tray_bt", function()
+    if fact.demo then
+        fact.bton = not fact.bton
+        text.status = fact.bton and "[demo] Bluetooth ligado" or "[demo] Bluetooth desligado"
+        return
+    end
+    local nextOn = not fact.bton
+    local ok, err = pcall(function() sys.call("bluetooth.power", nextOn) end)
+    if ok then fact.bton = nextOn; text.status = nextOn and "Bluetooth ligado" or "Bluetooth desligado"
+    else text.status = "Bluetooth: " .. tostring(err) end
+end)
+on("tray_back", function() show_tray_list() end)
+on("tray_action", function(index)
+    local t = trayItems[index + 1]
+    if not t then return end
+    if t.menu then show_tray_menu(index); return end
+    if fact.demo then text.status = "[demo] ativar " .. (t.title or t.name or "")
+    else
+        local ok, err = pcall(function() sys.call("tray.activate", t.key) end)
+        if not ok then text.status = "Bandeja: " .. tostring(err) end
+    end
+end)
+on("tray_context", function(index) show_tray_menu(index) end)
+on("tray_click", function(index)
+    local m = menus[index + 1]
+    if not m or not m.enabled then return end
+    if fact.demo then text.status = "[demo] menu " .. m.name
+    else
+        local ok, err = pcall(function() sys.call("tray.menu_click", m.key, m.id) end)
+        if not ok then text.status = "Menu: " .. tostring(err) end
+    end
 end)
 
 spawn("python3", {"services/bridge.py", "stream"}, function(line)

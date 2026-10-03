@@ -11,7 +11,7 @@ scene Honey {
     surface main {
         size: full, full; anchor: top; level: top, overlay while panel > 0
         reserve: -1; rate: 60; keyboard: exclusive while panel > 0
-    permissions { services: "clock", "apps", "apps.launch", "audio", "audio.*", "brightness", "brightness.level", "tray", "tray.*", "network", "bluetooth"; run: "python3" }
+    permissions { services: "clock", "apps", "apps.launch", "audio", "audio.*", "brightness", "brightness.level", "tray", "tray.*", "network", "network.*", "bluetooth", "bluetooth.*"; run: "python3" }
     service clock { time: text = "--:--" }
     fact previewphase = -1
     fact panel = 0
@@ -64,6 +64,9 @@ scene Honey {
     event tray_action ->
     event tray_context ->
     event tray_click ->
+    event tray_wifi ->
+    event tray_bt ->
+    event tray_back ->
     event toggle
     event test_launcher
     event test_controls
