@@ -164,24 +164,33 @@ def capture(config):
             if old['kind']=='image':image_path(old['value']).unlink(missing_ok=True)
 
 # DDC bus discovery is cached only within the helper process. Never assume a bus number.
+# On this NVIDIA, ddcutil holds the DRM i2c bus long enough to stall frames.
+# A failed probe must not immediately scan again.
 _ddc_bus=None
+_ddc_retry_at=0
+_DDC=['--disable-dynamic-sleep','--maxtries=1,1,1']
 
 def ddc_read():
-    global _ddc_bus
+    global _ddc_bus,_ddc_retry_at
     if not shutil.which('ddcutil'):return {'available':False}
+    now=time.monotonic()
+    if _ddc_bus is None and now<_ddc_retry_at:return {'available':False}
     try:
         if _ddc_bus is None:
-            p=subprocess.run(['ddcutil','detect','--brief'],capture_output=True,text=True,timeout=4)
-            buses=re.findall(r'/dev/i2c-(\d+)',p.stdout)
-            if not buses:return {'available':False}
+            p=subprocess.run(['ddcutil','detect','--brief',*_DDC],capture_output=True,text=True,timeout=4)
+            buses=re.findall(r'I2C bus:\s*/dev/i2c-(\d+)',p.stdout) or re.findall(r'/dev/i2c-(\d+)',p.stdout)
+            if not buses:
+                _ddc_retry_at=now+120
+                return {'available':False}
             _ddc_bus=buses[0]
-        p=subprocess.run(['ddcutil','--bus',_ddc_bus,'getvcp','10','--terse'],capture_output=True,text=True,timeout=4)
+        p=subprocess.run(['ddcutil','--bus',_ddc_bus,'getvcp','10','--terse',*_DDC],capture_output=True,text=True,timeout=2)
         fields=p.stdout.strip().split()
-        if p.returncode or len(fields)<5:_ddc_bus=None;return {'available':False}
+        if p.returncode or len(fields)<5:
+            _ddc_bus=None;_ddc_retry_at=now+120;return {'available':False}
         current,maximum=float(fields[-2]),float(fields[-1])
         return {'available':maximum>0,'level':current/maximum if maximum else 0,'maximum':maximum}
     except (OSError,ValueError,subprocess.TimeoutExpired):
-        _ddc_bus=None;return {'available':False}
+        _ddc_bus=None;_ddc_retry_at=time.monotonic()+120;return {'available':False}
 
 def ddc_set(value):
     reading=ddc_read()
@@ -193,7 +202,7 @@ def ddc_set(value):
     except (OSError,subprocess.TimeoutExpired) as e:return {'ok':False,'message':str(e)}
 
 def stream(store):
-    cfg=store.reload();output(snapshot(store));last=None;start=time.monotonic();cava=None;clip=None;last_cfg=None;last_brightness=0
+    cfg=store.reload();output(snapshot(store));last=None;start=time.monotonic();cava=None;clip=None;last_cfg=None;last_brightness=0;cava_missing=False
     try:
         while True:
             fingerprint=(store.path.read_bytes() if store.path.exists() else b'')
@@ -201,8 +210,11 @@ def stream(store):
                 output(snapshot(store));last_cfg=fingerprint;cfg=store.current
             if cfg['mode']=='live' and cfg['modules']['cava'] and cava is None and shutil.which('cava'):
                 settings=(cache_dir() if managed() else ROOT/'work')/'cava.conf';settings.parent.mkdir(parents=True,exist_ok=True)
-                settings.write_text(f'[general]\nbars = 12\nframerate = {cfg["cava"]["rate"]}\n[output]\nmethod = raw\nraw_target = /dev/stdout\ndata_format = ascii\nascii_max_range = 1000\nbar_delimiter = 59\nframe_delimiter = 10\n')
-                cava=subprocess.Popen(['cava','-p',str(settings)],stdout=subprocess.PIPE,stderr=subprocess.DEVNULL)
+                settings.write_text(f'[general]\nbars = 12\nframerate = {cfg["cava"]["rate"]}\n[input]\nmethod = pipewire\nsource = auto\n[output]\nmethod = raw\nraw_target = /dev/stdout\ndata_format = ascii\nascii_max_range = 1000\nbar_delimiter = 59\nframe_delimiter = 10\n')
+                # stderr stays inherited so a real device/config failure shows in the honey-shell journal.
+                cava=subprocess.Popen(['cava','-p',str(settings)],stdout=subprocess.PIPE);cava_missing=False
+            elif cfg['mode']=='live' and cfg['modules']['cava'] and cava is None and not cava_missing and not shutil.which('cava'):
+                output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava_missing=True
             if cfg['mode']=='live' and clip is None and shutil.which('wl-paste'):
                 clip=subprocess.Popen(['wl-paste','--watch',sys.executable,str(Path(__file__).resolve()),'capture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
             if cfg['mode']=='demo' or not cfg['modules']['cava']:
@@ -212,13 +224,20 @@ def stream(store):
                 t=time.monotonic()-start
                 bars=[.1+.65*abs(math.sin(t*1.9+i*.6))*abs(math.sin(t*.7+i*.2)) for i in range(12)] if cfg['modules']['cava'] and not cfg['motion']['reduced'] else [0]*12
                 output({'type':'cava','bars':bars,'demo':True})
-            elif cava and select.select([cava.stdout],[],[],0)[0]:
-                data=cava.stdout.readline().decode(errors='replace').strip()
-                try:output({'type':'cava','bars':[min(1,max(0,float(x)/1000)) for x in data.split(';') if x][:12]})
-                except ValueError:pass
-                if cava.poll() is not None:output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava=None
-            else:output({'type':'cava','bars':[0]*12,'error':'Cava indisponível' if not cava else ''})
-            if managed() and cfg['mode']=='live' and time.monotonic()-last_brightness>5:
+            elif cava:
+                # Publish only a finished frame. A tick with nothing ready must not zero the bars.
+                latest=None
+                while select.select([cava.stdout],[],[],0)[0]:
+                    raw=cava.stdout.readline()
+                    if not raw:break
+                    latest=raw.decode(errors='replace').strip()
+                if latest:
+                    try:output({'type':'cava','bars':[min(1,max(0,float(x)/1000)) for x in latest.split(';') if x][:12]})
+                    except ValueError:pass
+                if cava.poll() is not None:
+                    output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava=None
+            # Every 5s this stalled DP-1 (slow frames of ~50–115 ms). Once a minute is enough for the slider.
+            if managed() and cfg['mode']=='live' and time.monotonic()-last_brightness>60:
                 output({'type':'brightness',**ddc_read()});last_brightness=time.monotonic()
             h=history(cfg);stamp=json.dumps(h,sort_keys=True)
             if stamp!=last:output({'type':'clipboard','items':h});last=stamp
