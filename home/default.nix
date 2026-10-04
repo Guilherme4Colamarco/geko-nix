@@ -1,5 +1,5 @@
 { inputs, pkgs, ... }: {
-  imports = [ ./fish.nix ];
+  imports = [ ./fish.nix ./claude-code.nix ];
   home.username = "geko";
   home.homeDirectory = "/home/geko";
   home.stateVersion = "26.05";

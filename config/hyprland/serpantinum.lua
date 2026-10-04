@@ -6,6 +6,7 @@ hl.config({
   misc = { disable_hyprland_logo = true, disable_splash_rendering = true },
 })
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1.0 })
+hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "auto", scale = 1.0 })
 hl.env("XCURSOR_THEME", "Adwaita")
 hl.env("XCURSOR_SIZE", "24")
 

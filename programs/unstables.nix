@@ -7,6 +7,7 @@
     brave-origin
     codex
     code-cursor
+    claude-code
     fastfetch
     fetch
     comma
@@ -14,5 +15,12 @@
     rmatrix
     nix-index
 
-  ] ++ [ inputs.chatgpt-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default ];
+  ] ++ [
+    inputs.chatgpt-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default
+    inputs.claude-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default
+  ];
+
+  # Claude Desktop's local Cowork VM needs these devices; no VM autostarts.
+  users.users.geko.extraGroups = [ "kvm" ];
+  boot.kernelModules = [ "vhost_vsock" ];
 }

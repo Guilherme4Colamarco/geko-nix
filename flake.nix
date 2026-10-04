@@ -12,6 +12,14 @@
       url = "github:poeck/chatgpt-desktop-app-nix-flake/d23d08e1275566612fbac7487f18771dde415af2";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
+    claude-desktop-app = {
+      url = "github:poeck/claude-desktop-nix-flake";
+      inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    ecc = {
+      url = "github:affaan-m/ECC/ef648e01899ba3e8dc6371642deaaf64b4477775";
+      flake = false;
+    };
     astrovim = { url = "github:AstroNvim/template"; flake = false; };
     pleamar-wm = {
       url = "github:k4ditano/pleamar-wm/548b3fc226e65128770eef832b26142b33e23729";
@@ -25,7 +33,7 @@
     desktopPkgs = import serpantinum.inputs.nixpkgs { inherit system; config.allowUnfree = true; };
     mkDesktop = desktop: nixpkgs.lib.nixosSystem {
       inherit system;
-      specialArgs = { inherit inputs unstablePkgs desktopPkgs; };
+      specialArgs = { inherit inputs unstablePkgs desktopPkgs; desktopProfile = desktop; };
       modules = [
         nix-flatpak.nixosModules.nix-flatpak
         home-manager.nixosModules.home-manager
