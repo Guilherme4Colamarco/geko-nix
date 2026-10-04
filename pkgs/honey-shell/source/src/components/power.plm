@@ -3,16 +3,18 @@ library PowerPanelLibrary {
     group { opacity: 1; show: poweron
     prop hot = 0 ~quick
     follow hot = if(power_hit.hover, 1, 0)
+    on change hot { powerhot = hot }
 
-        Honey(rightx - power * 95, mix(if(compact, 88, 160), if(compact, 183, 255), power), 38 + power * 314, (power * 0.5 + hot * 0.15) * deform)
+        zone box power_body { from: pwx, 0; size: pww, pwh; active: panel == 4 }
         zone box power_hit { from: rightx, 0; size: if(compact, 88, 160), 38; cursor: pointer }
         on press power_hit { emit request(4) }
         figure power { at: rightx + if(compact, 44, 80), 22; size: 24, 24; color: ink }
         group { opacity: clamp((power - 0.6) / 0.4, 0, 1)
             zone box power_inside { from: rightx - 90, 40; size: if(compact, 178, 245), 310 }
-            text "Sessão" { family: "DejaVu Sans"; anchor: left center; at: rightx - 70, 78; size: 22; color: ink }
+            text "Sessão" { family: "Fredoka"; anchor: left center; at: rightx - 70, 78; size: 23; weight: 600; color: ink }
             repeat i in 0..5 {
-                box power.$i { from: rightx - 74, 98 + i * 41; size: if(compact, 155, 210), 34; corner: 13; color: if(confirm == i + 1, orange, gold); opacity: if(confirm == i + 1, .8, .18); cursor: pointer }
+                Gob(rightx - 74, 98 + i * 41, if(compact, 155, 210), 34, power.$i.hover, if(confirm == i + 1, 1, 0), i)
+                zone box power.$i { from: rightx - 74, 98 + i * 41; size: if(compact, 155, 210), 34; cursor: pointer }
                 on press power.$i { emit power_action(i) }
             }
             figure lock { at: rightx - 55, 116; size: 18, 18; color: ink }
@@ -20,12 +22,12 @@ library PowerPanelLibrary {
             figure logout { at: rightx - 55, 198; size: 18, 18; color: ink }
             figure restart { at: rightx - 55, 239; size: 18, 18; color: ink }
             figure power { at: rightx - 55, 280; size: 18, 18; color: ink }
-            text "Bloquear" { family: "DejaVu Sans"; anchor: left center; at: rightx - 30, 121; size: 12; color: ink }
-            text "Suspender" { family: "DejaVu Sans"; anchor: left center; at: rightx - 30, 162; size: 12; color: ink }
-            text "Sair da sessão" { family: "DejaVu Sans"; anchor: left center; at: rightx - 30, 203; size: 12; color: ink }
-            text "Reiniciar" { family: "DejaVu Sans"; anchor: left center; at: rightx - 30, 244; size: 12; color: ink }
-            text "Desligar" { family: "DejaVu Sans"; anchor: left center; at: rightx - 30, 285; size: 12; color: ink }
-            text "Clique novamente para confirmar" { family: "DejaVu Sans"; anchor: left center; at: rightx - 73, 326; size: 10; width: if(compact, 155, 210); lines: 2; color: ink; show: confirm > 0 }
+            text "Bloquear" { family: "Nunito"; anchor: left center; at: rightx - 30, 121; size: 13; weight: 600; color: ink }
+            text "Suspender" { family: "Nunito"; anchor: left center; at: rightx - 30, 162; size: 13; weight: 600; color: ink }
+            text "Sair da sessão" { family: "Nunito"; anchor: left center; at: rightx - 30, 203; size: 13; weight: 600; color: ink }
+            text "Reiniciar" { family: "Nunito"; anchor: left center; at: rightx - 30, 244; size: 13; weight: 600; color: ink }
+            text "Desligar" { family: "Nunito"; anchor: left center; at: rightx - 30, 285; size: 13; weight: 600; color: ink }
+            text "Clique novamente para confirmar" { family: "Nunito"; anchor: left center; at: rightx - 73, 326; size: 11; weight: 600; width: if(compact, 155, 210); lines: 2; color: ink; show: confirm > 0 }
         }
     }
     }

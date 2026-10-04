@@ -5,7 +5,7 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from services.app_scope import launch_argv
+from services.app_scope import launch_argv, service_argv
 
 
 class AppScopeTests(unittest.TestCase):
@@ -32,6 +32,14 @@ class AppScopeTests(unittest.TestCase):
     def test_other_setsid_calls_keep_the_original_behavior(self):
         self.assertEqual(launch_argv(["--wait", "other-app"]),
                          ["/store/setsid", "--wait", "other-app"])
+
+    def test_service_argv_without_systemd_run_fails_clearly(self):
+        del os.environ["HONEY_SYSTEMD_RUN"]
+        with patch("services.app_scope.shutil.which", return_value=None):
+            self.assertRaises(FileNotFoundError, service_argv, ["app"])
+            self.assertRaises(FileNotFoundError, launch_argv, ["-f", "sh", "-c", "app"])
+        with patch("services.app_scope.shutil.which", return_value="/path/systemd-run"):
+            self.assertEqual(service_argv(["app"])[0], "/path/systemd-run")
 
 
 if __name__ == "__main__":

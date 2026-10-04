@@ -8,10 +8,10 @@ import signal
 import subprocess
 import sys
 import time
-from core.config import Store, state_dir
+from core.config import ROOT, Store, state_dir, wallpaper_state
 from services.bridge import action
 
-PANELS={'launcher':10,'apps':10,'files':11,'commands':12,'settings':13,'emoji':14,'clipboard':15,'controls':2,'tray':3,'power':4,'close':0}
+PANELS={'launcher':10,'apps':10,'files':11,'commands':12,'settings':13,'emoji':14,'clipboard':15,'controls':2,'tray':3,'power':4,'wallpapers':6,'notifications':7,'close':0}
 
 def run(argv, **kwargs):
     return subprocess.run(argv,check=True,**kwargs)
@@ -27,6 +27,11 @@ def lock_active():
         except OSError: pass
     return False
 
+def say(command):
+    # The shell learns that the screen is locked / do-not-disturb through its own socket (events).
+    subprocess.run(['pleamar','--say','honey',command],check=False,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+
+
 def lock():
     # swaylock returns from --daemonize only after the compositor has locked.
     # Serialize attempts and accept an already-running lock only if owned by us.
@@ -34,13 +39,13 @@ def lock():
     with (root/'lock.lock').open('w') as f:
         fcntl.flock(f,fcntl.LOCK_EX)
         if lock_active():return
-        subprocess.run(['makoctl','mode','-a','locked'],check=False)
+        say('emit lock_state 1')
         try:
             log=state_dir()/'lock.log';log.parent.mkdir(parents=True,exist_ok=True)
             with log.open('a') as output:
                 run(['swaylock','--daemonize'],stdin=subprocess.DEVNULL,stdout=output,stderr=subprocess.STDOUT)
         except Exception:
-            subprocess.run(['makoctl','mode','-r','locked'],check=False);raise
+            say('emit lock_state 0');raise
         subprocess.Popen(['honeyctl','lock-monitor'],start_new_session=True,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 
 def screenshot(region):
@@ -82,6 +87,15 @@ def session():
                 time.sleep(1)
         finally:subprocess.run(['systemctl','--user','stop','honey-session.target'])
 
+def wallpaper_run():
+    # Runs as honey-wallpaper.service: the chosen image, or the packaged one.
+    fit=Store().reload()['wallpaper']['fit']
+    try:path=json.loads(wallpaper_state().read_text()).get('path','')
+    except (OSError,ValueError,AttributeError):path=''
+    if not path or not Path(path).is_file():path=str(ROOT/'fixtures/wallpaper.png')
+    os.execvp('swaybg',['swaybg','-i',path,'-m',fit])
+
+
 def main(args=None):
     args=list(sys.argv[1:] if args is None else args)
     cmd=args[0] if args else 'help'
@@ -91,7 +105,10 @@ def main(args=None):
         run(['pleamar','--say','honey','emit control '+str(code)])
     elif cmd=='lock-monitor':
         while lock_active():time.sleep(.5)
-        subprocess.run(['makoctl','mode','-r','locked'],check=False)
+        say('emit lock_state 0')
+    elif cmd=='dnd' and len(args)==2 and args[1] in ('on','off','toggle'):
+        say('emit dnd '+{'off':'0','on':'1','toggle':'2'}[args[1]])
+    elif cmd=='wallpaper-run':wallpaper_run()
     elif cmd=='lock':lock()
     elif cmd=='suspend':lock();run(['systemctl','suspend'])
     elif cmd=='session':session()
@@ -110,7 +127,7 @@ def main(args=None):
                 print(result['message']);return 0 if result['ok'] else 1
         else:raise ValueError('Ação de mídia desconhecida')
     else:
-        print('honeyctl toggle|open '+ '|'.join(PANELS)+'; lock; suspend; screenshot region|screen; clear-clipboard; media ACTION')
+        print('honeyctl toggle|open '+ '|'.join(PANELS)+'; lock; suspend; screenshot region|screen; clear-clipboard; media ACTION; dnd on|off|toggle; wallpaper-run')
         return 0 if cmd=='help' else 2
     return 0
 

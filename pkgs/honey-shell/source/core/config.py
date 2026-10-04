@@ -12,16 +12,18 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULTS = {
     'version': 1, 'preset': 'Honey', 'mode': 'demo',
-    'modules': {'cava': True, 'controls': True, 'clock': True, 'tray': True, 'power': True},
+    'modules': {'cava': True, 'controls': True, 'clock': True, 'tray': True, 'power': True, 'wallpaper': True, 'notifications': True},
     'layout': {'spacing': 14, 'central_width': 620, 'panel_height': 550, 'reserve': 0},
     'appearance': {'base': '#b97912', 'highlight': '#ffdb85', 'ink': '#fff0ca', 'input': '#ffad28',
-                   'opacity': .88, 'glass': .72, 'refraction': .75, 'blur': .6, 'glow': .08,
+                   'opacity': .66, 'glass': .72, 'refraction': .75, 'blur': .6, 'glow': .08,
                    'shadow': .22, 'thickness': 1.0, 'rounding': 40, 'drops': 3},
     'motion': {'viscosity': 1.0, 'speed': 1.0, 'elasticity': 1.0, 'bounce': .6,
-               'deformation': 1.0, 'reduced': False},
+               'deformation': 1.0, 'life': 1.0, 'reduced': False},
     'files': {'roots': ['fixtures'], 'limit': 1000},
     'clipboard': {'history': 'fixtures/clipboard.json'},
     'cava': {'bars': 12, 'rate': 12},
+    'wallpaper': {'folder': '~/Imagens/Wallpapers', 'fit': 'fill'},
+    'notifications': {'timeout': 6, 'low_timeout': 3, 'max_visible': 3, 'dnd': False, 'sound': False, 'sound_file': ''},
     'compositor': 'auto', 'power': {'lock_command': []},
 }
 
@@ -49,6 +51,25 @@ def image_path(value):
     return (state_dir()/value).resolve() if managed() else (ROOT/value).resolve()
 
 
+def wallpaper_dir(c):
+    # Demo only browses the project's fixtures; live uses the configured folder.
+    if c['mode']=='demo': return (ROOT/'fixtures').resolve()
+    folder=user_path(c['wallpaper']['folder'])
+    return (folder if folder.is_absolute() else ROOT/folder).resolve()
+
+
+def sound_path(c):
+    # Only a file the user names, never a directory or an arbitrary relative path.
+    f=c['notifications']['sound_file']
+    if not f: return None
+    p=user_path(f)
+    return p.resolve() if p.is_absolute() and p.suffix.lower() in ('.oga','.ogg','.wav','.flac','.mp3') else None
+
+
+def wallpaper_state():
+    return state_dir()/'wallpaper.json'
+
+
 def merge(base, overlay):
     result = copy.deepcopy(base)
     for key, value in overlay.items():
@@ -66,15 +87,15 @@ def validate(c):
     if c.get('preset') != 'Honey': raise ValueError('preset desconhecido')
     if c.get('compositor') not in ('auto', 'pleamar-wm', 'hyprland', 'niri', 'generic'):
         raise ValueError('compositor desconhecido')
-    for section in ['modules', 'layout', 'appearance', 'motion', 'files', 'clipboard', 'cava', 'power']:
+    for section in ['modules', 'layout', 'appearance', 'motion', 'files', 'clipboard', 'cava', 'power', 'wallpaper', 'notifications']:
         if not isinstance(c.get(section), dict): raise ValueError(f'{section} deve ser objeto')
     for k, v in c['modules'].items():
         if k not in DEFAULTS['modules'] or type(v) is not bool: raise ValueError('módulo inválido')
     for k in ['base', 'highlight', 'ink', 'input']:
         if not re.fullmatch(r'#[0-9a-fA-F]{6}', str(c['appearance'][k])): raise ValueError('cor inválida: '+k)
     limits = {'layout': {'spacing':(0,50),'central_width':(380,1000),'panel_height':(400,800),'reserve':(0,100)},
-              'appearance': {'opacity':(.2,1),'glass':(0,1),'refraction':(0,2),'blur':(0,1),'glow':(0,.5),'shadow':(0,.8),'thickness':(.5,2),'rounding':(10,100),'drops':(0,3)},
-              'motion': {'viscosity':(.4,3),'speed':(.4,3),'elasticity':(.4,2),'bounce':(0,1),'deformation':(0,2)},
+              'appearance': {'opacity':(.2,1),'glass':(0,1),'refraction':(0,2),'blur':(0,1),'glow':(0,.5),'shadow':(0,.8),'thickness':(.5,2),'rounding':(10,100),'drops':(0,5)},
+              'motion': {'viscosity':(.4,3),'speed':(.4,3),'elasticity':(.4,2),'bounce':(0,1),'deformation':(0,2),'life':(0,2)},
               'files': {'limit':(1,10000)}, 'cava': {'bars':(12,12),'rate':(1,30)}}
     for sec, fields in limits.items():
         for key, (low,high) in fields.items():
@@ -82,6 +103,14 @@ def validate(c):
             if type(v) not in (int,float) or not math.isfinite(v) or not low <= v <= high:
                 raise ValueError(f'{sec}.{key} fora dos limites')
     if type(c['motion']['reduced']) is not bool: raise ValueError('reduced deve ser booleano')
+    if not isinstance(c['wallpaper'].get('folder'),str) or not c['wallpaper']['folder']: raise ValueError('wallpaper.folder inválido')
+    n=c['notifications']
+    for k,(lo,hi) in {'timeout':(1,60),'low_timeout':(1,30),'max_visible':(1,3)}.items():
+        v=n.get(k)
+        if type(v) not in (int,float) or not math.isfinite(v) or not lo<=v<=hi: raise ValueError(f'notifications.{k} fora dos limites')
+    if type(n.get('dnd')) is not bool or type(n.get('sound')) is not bool: raise ValueError('notifications.dnd e sound devem ser booleanos')
+    if not isinstance(n.get('sound_file'),str): raise ValueError('notifications.sound_file inválido')
+    if c['wallpaper'].get('fit') not in ('fill','fit','center','tile','stretch'): raise ValueError('wallpaper.fit inválido')
     roots=c['files']['roots']
     if not isinstance(roots,list) or not all(isinstance(x,str) and x for x in roots): raise ValueError('roots inválido')
     history=c['clipboard']['history']
@@ -125,12 +154,14 @@ def palette(c):
     if m['reduced']: stiffness,damping=10000,200
     values={'darkink':'#281a0c','honey':a['base'],'gold':a['highlight'],'ink':a['ink'],'orange':a['input'],
             'tint':a['opacity'],'glassiness':a['glass'],'refract':a['refraction'],'frost':a['blur'],
-            'edgeglow':a['glow'],'shade':a['shadow'],'thickness':a['thickness'],'roundness':a['rounding'],
-            'dropcount':a['drops'],'deform':0 if m['reduced'] else m['deformation'],
+            'shade':a['shadow'],'thickness':a['thickness'],'roundness':a['rounding'],
+            'dropcount':a['drops'],'deform':0 if m['reduced'] else m['deformation'],'life':0 if m['reduced'] else m['life'],
+            'dispersion':round(.03+.05*a['refraction'],3),'dome':round(.1*a['thickness'],3),'ripple':.3,'warn':'#ffbc82',
             'panelwidth':l['central_width'],'panelheight':l['panel_height'],'spacing':l['spacing'],'reserve':l['reserve']}
     lines=['// Generated from validated workspace configuration.','library HoneyTheme {']
     lines += [f'    let {k} = {v}' for k,v in values.items()]
-    lines += [f'    spring viscous = {stiffness:.3f}, {damping:.3f}', f'    spring droplet = {stiffness*.65:.3f}, {damping*.75:.3f}', '}']
+    lines += [f'    spring viscous = {stiffness:.3f}, {damping:.3f}', f'    spring droplet = {stiffness*.65:.3f}, {damping*.75:.3f}',
+               f'    spring blob = {stiffness*.4:.3f}, {damping*.6:.3f}', f'    spring drip = {stiffness*.22:.3f}, {damping*.45:.3f}', '}']
     return '\n'.join(lines)+'\n'
 
 
@@ -145,6 +176,7 @@ def write_palette(c):
     if managed() and os.environ.get("HONEY_BUILD") != "1": return
     changes={ROOT/'src/themes/active.plm':palette(c)}
     material=ROOT/'src/components/material.plm'
+    # `rim` only takes a literal percentage in Pleamar, so it cannot be a theme token.
     if material.exists():
         changes[material]=re.sub(r'rim: [0-9.]+%',f'rim: {c["appearance"]["glow"]*100:.3f}%',material.read_text())
     scene=ROOT/'src/honey.plm'

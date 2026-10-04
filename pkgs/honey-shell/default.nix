@@ -1,6 +1,6 @@
 { lib, stdenvNoCC, makeWrapper, python3, pleamar, cava, wl-clipboard, xdg-utils, ddcutil,
   wireplumber, playerctl, brightnessctl, swaylock, swaybg, grim, slurp, procps, systemd, dbus,
-  bash, librsvg, mako, util-linux, settings ? {} }:
+  bash, librsvg, util-linux, settings ? {} }:
 stdenvNoCC.mkDerivation {
   pname = "honey-shell";
   version = "0.1.0";
@@ -32,7 +32,7 @@ stdenvNoCC.mkDerivation {
       --add-flags "$out/share/honey/cli.py" \
       --unset PLEAMAR_SOCKETS --unset HONEY_BUILD --set HONEY_MANAGED 1 --set HONEY_CONFIG "$out/share/honey/config/user.json" \
       --set HONEY_SHELL ${bash}/bin/sh \
-      --prefix PATH : "$out/bin:${lib.makeBinPath [ pleamar cava wl-clipboard xdg-utils ddcutil wireplumber playerctl brightnessctl swaylock swaybg grim slurp procps systemd dbus mako ]}"
+      --prefix PATH : "$out/bin:${lib.makeBinPath [ pleamar cava wl-clipboard xdg-utils ddcutil wireplumber playerctl brightnessctl swaylock swaybg grim slurp procps systemd dbus ]}"
     cat > $out/bin/honey-shell <<EOF
     #!${bash}/bin/bash
     set -e

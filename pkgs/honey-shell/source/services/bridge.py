@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """JSON boundary for helpers outside Pleamar's built-in platform services."""
 import argparse
+import contextlib
+import copy
 import fcntl
 import re
 import hashlib
@@ -8,17 +10,20 @@ import json
 import math
 import os
 from pathlib import Path
+import queue
 import select
 import shlex
 import shutil
 import subprocess
 import sys
+import threading
 import time
 
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT))
-from core.config import Store, write_palette, managed, state_dir, cache_dir, history_path, image_path, user_path, atomic_text
+from core.config import sound_path, Store, write_palette, managed, state_dir, cache_dir, history_path, image_path, user_path, atomic_text, wallpaper_dir, wallpaper_state
 from adapters.compositor import capabilities, power_command
+from services.app_scope import service_argv
 
 EMOJI=[('🍯','mel honey'),('🐝','abelha bee'),('✨','brilho sparkle'),('🧡','coração heart'),('🌙','lua moon'),('☀️','sol sun'),('🎵','música music'),('✅','confirmar check'),('🔥','fogo fire'),('🌿','folha leaf')]
 SETTINGS=[('motion.reduced','Movimento reduzido','Alternar animações'),('modules.cava','Cava','Ativar/desativar visualizador'),('modules.tray','Tray','Ativar/desativar tray'),('appearance.glass','Transparência do mel','Alternar material sólido/translúcido'),('motion.bounce','Elasticidade','Alternar balanço suave/expressivo')]
@@ -41,8 +46,8 @@ def history(config):
         return clean
     except (OSError,ValueError):return []
 
-def search(mode,query,config):
-    q=query.casefold();result=[]
+def search(mode,query,config,cap=7):
+    q=query.casefold();result=[];cap=max(1,cap)
     if mode=='files':
         count=0
         for root in config['files']['roots']:
@@ -52,19 +57,20 @@ def search(mode,query,config):
                 dirs[:]=sorted(d for d in dirs if not d.startswith('.') and not (Path(parent)/d).is_symlink())
                 for name in sorted(files):
                     count+=1
-                    if count>config['files']['limit']:return result[:7]
+                    if count>config['files']['limit']:return result[:cap]
                     path=Path(parent)/name
                     if path.is_symlink():continue
                     if q in name.casefold():result.append(row(str(path),name,str(path.parent),'file',str(path)))
-                    if len(result)==7:return result
+                    if len(result)==cap:return result
     elif mode=='emoji':
-        result=[row(icon,icon+'  '+label,'Copiar emoji','emoji',icon) for icon,label in EMOJI if q in label.casefold() or q in icon][:7]
+        result=[row(icon,icon+'  '+label,'Copiar emoji','emoji',icon) for icon,label in EMOJI if q in label.casefold() or q in icon][:cap]
     elif mode=='settings':
-        result=[row(key,name,('Gerenciado pelo Home Manager · '+str(config[key.split('.')[0]][key.split('.')[1]])) if managed() else detail,'setting',key) for key,name,detail in SETTINGS if q in (key+' '+name).casefold()][:7]
+        result=[row(key,name,('Gerenciado pelo Home Manager · '+str(config[key.split('.')[0]][key.split('.')[1]])) if managed() else detail,'setting',key) for key,name,detail in SETTINGS if q in (key+' '+name).casefold()][:cap]
     elif mode=='clipboard':
-        result=[row(x['id'],x['label'],'Imagem' if x['kind']=='image' else 'Texto','clipboard',x['id'],str(image_path(x['value'])) if x['kind']=='image' else '') for x in history(config) if q in (x['label']+' '+(x['value'] if x['kind']=='text' else '')).casefold()][:7]
-    if mode=='clipboard' and (not q or q in 'limpar histórico clipboard'):
-        result=result[:6]+[row('clear','Limpar histórico','Remover textos e imagens armazenados','clear','')]
+        clear=not q or q in 'limpar histórico clipboard'
+        result=[row(x['id'],x['label'],'Imagem' if x['kind']=='image' else 'Texto','clipboard',x['id'],str(image_path(x['value'])) if x['kind']=='image' else '') for x in history(config) if q in (x['label']+' '+(x['value'] if x['kind']=='text' else '')).casefold()][:cap-1 if clear else cap]
+    if mode=='clipboard' and clear:
+        result=result[:cap-1]+[row('clear','Limpar histórico','Remover textos e imagens armazenados','clear','')]
     return result
 
 def execute(command,config):
@@ -92,6 +98,31 @@ def call(argv,config,stdin=None):
         return {'ok':p.returncode==0,'message':p.stderr[:2048].decode(errors='replace') or ('Concluído' if p.returncode==0 else f'Código {p.returncode}')}
     except (OSError,subprocess.TimeoutExpired) as e:return {'ok':False,'message':str(e)}
 
+WALL_EXT={'.png','.jpg','.jpeg','.webp'}
+def wallpaper_current():
+    try:return json.loads(wallpaper_state().read_text()).get('path','')
+    except (OSError,ValueError,AttributeError):return ''
+
+def wallpapers(config,page=0,cap=12):
+    d=wallpaper_dir(config)
+    ext=WALL_EXT|({'.svg'} if config['mode']=='demo' else set())
+    try:files=sorted((p for p in d.iterdir() if p.is_file() and p.suffix.lower() in ext),key=lambda p:p.name.lower())
+    except OSError:return {'rows':[],'page':0,'pages':0,'total':0,'folder':str(d),'error':'Pasta indisponível: '+str(d)}
+    pages=max(1,-(-len(files)//cap));page=max(0,min(int(page),pages-1));cur=wallpaper_current()
+    rows=[{'path':str(p),'name':p.stem,'current':str(p)==cur} for p in files[page*cap:(page+1)*cap]]
+    return {'rows':rows,'page':page,'pages':pages,'total':len(files),'folder':str(d)}
+
+def notify_sound(config):
+    n=config['notifications']
+    if config['mode']!='live' or not n['sound'] or n['dnd']:return {'ok':True,'message':'sem som'}
+    p=sound_path(config)
+    if not p or not p.is_file():return {'ok':False,'message':'Arquivo de som indisponível.'}
+    player=shutil.which('pw-play') or shutil.which('paplay')
+    if not player:return {'ok':False,'message':'Recurso indisponível: pw-play'}
+    try:subprocess.Popen([player,str(p)],stdin=subprocess.DEVNULL,stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL,start_new_session=True)
+    except OSError as e:return {'ok':False,'message':str(e)}
+    return {'ok':True,'message':'som'}
+
 def action(kind,value,config,store,confirmed=False):
     if kind=='clear':
         if config['mode']=='demo':return {'ok':True,'message':'[demo] limpar histórico'}
@@ -108,7 +139,10 @@ def action(kind,value,config,store,confirmed=False):
     if kind=='file':
         p=Path(value).resolve()
         if not p.is_file() or not any(p.is_relative_to((user_path(r) if managed() else ROOT/r).resolve()) for r in config['files']['roots']):return {'ok':False,'message':'Arquivo fora das pastas de busca.'}
-        return call(['xdg-open',str(p)],config)
+        if config['mode']=='demo':return call(['xdg-open',str(p)],config)
+        opener=shutil.which('xdg-open')
+        if not opener:return {'ok':False,'message':'Recurso indisponível: xdg-open'}
+        return call(service_argv([opener,str(p)]),config)
     if kind=='emoji':return call(['wl-copy','--type','text/plain'],config,value.encode())
     if kind=='clipboard':
         item=next((x for x in history(config) if x['id']==value),None)
@@ -125,6 +159,15 @@ def action(kind,value,config,store,confirmed=False):
         new=(not old) if isinstance(old,bool) else (0.0 if old>0 else (.72 if key=='glass' else .6))
         c=store.write({sec:{key:new}});write_palette(c)
         return {'ok':True,'message':'Ajuste atualizado: '+value,'config':c}
+    if kind=='sound':return notify_sound(config)
+    if kind=='wallpaper':
+        p=Path(value).resolve();d=wallpaper_dir(config)
+        if not p.is_file() or not p.is_relative_to(d) or p.suffix.lower() not in WALL_EXT|({'.svg'} if config['mode']=='demo' else set()):return {'ok':False,'message':'Imagem fora da pasta de wallpapers.'}
+        if config['mode']=='demo':return {'ok':True,'message':'[demo] wallpaper '+p.stem,'path':str(p)}
+        state=wallpaper_state();state.parent.mkdir(parents=True,exist_ok=True);atomic_text(state,json.dumps({'path':str(p)},ensure_ascii=False))
+        r=call(['systemctl','--user','restart','honey-wallpaper.service'],config);r['path']=str(p)
+        if r['ok']:r['message']='Wallpaper: '+p.stem
+        return r
     if kind=='power':
         if value not in ['lock','suspend','logout','reboot','shutdown']:return {'ok':False,'message':'Ação desconhecida.'}
         if value in ['reboot','shutdown'] and not confirmed:return {'ok':False,'message':'Confirmação necessária.'}
@@ -134,9 +177,13 @@ def action(kind,value,config,store,confirmed=False):
     return {'ok':False,'message':'Ação desconhecida.'}
 
 def snapshot(store):
-    config=store.reload()
-    if not store.error:write_palette(config)
-    return {'type':'config','config':config,'error':store.error,'capabilities':capabilities(config),'fixture_icon':str(ROOT/'fixtures/honey.svg'),'managed':managed()}
+    previous=copy.deepcopy(store.current);config=store.reload();error=store.error
+    if not error:
+        try:write_palette(config)
+        except (ValueError,OSError) as e:
+            # Keep the last good config; the stream must outlive a palette that cannot be applied.
+            store.current=previous;config=copy.deepcopy(previous);error=str(e)
+    return {'type':'config','config':config,'error':error,'capabilities':capabilities(config),'fixture_icon':str(ROOT/'fixtures/honey.svg'),'managed':managed()}
 
 def capture(config):
     """Called only by wl-paste --watch in explicitly enabled live mode."""
@@ -163,46 +210,112 @@ def capture(config):
         for old in expired:
             if old['kind']=='image':image_path(old['value']).unlink(missing_ok=True)
 
-# DDC bus discovery is cached only within the helper process. Never assume a bus number.
+# DDC bus discovery is cached in the process and in cache_dir() (every `bridge.py action` is a new process).
+# Never assume a bus number; a cached bus expires after _DDC_TTL and is dropped on any read failure.
 # On this NVIDIA, ddcutil holds the DRM i2c bus long enough to stall frames.
-# A failed probe must not immediately scan again.
+# A failed probe must not immediately scan again (_DDC_RETRY, also persisted).
 _ddc_bus=None
 _ddc_retry_at=0
 _DDC=['--disable-dynamic-sleep','--maxtries=1,1,1']
+_DDC_TTL=900
+_DDC_RETRY=120
 
-def ddc_read():
-    global _ddc_bus,_ddc_retry_at
-    if not shutil.which('ddcutil'):return {'available':False}
-    now=time.monotonic()
-    if _ddc_bus is None and now<_ddc_retry_at:return {'available':False}
+def _ddc_cache():return cache_dir()/'ddc-bus.json'
+def _ddc_cache_read():
     try:
-        if _ddc_bus is None:
-            p=subprocess.run(['ddcutil','detect','--brief',*_DDC],capture_output=True,text=True,timeout=4)
-            buses=re.findall(r'I2C bus:\s*/dev/i2c-(\d+)',p.stdout) or re.findall(r'/dev/i2c-(\d+)',p.stdout)
-            if not buses:
-                _ddc_retry_at=now+120
-                return {'available':False}
-            _ddc_bus=buses[0]
-        p=subprocess.run(['ddcutil','--bus',_ddc_bus,'getvcp','10','--terse',*_DDC],capture_output=True,text=True,timeout=2)
+        data=json.loads(_ddc_cache().read_text())
+        return data if isinstance(data,dict) else {}
+    except (OSError,ValueError):return {}
+def _ddc_cache_write(**data):
+    try:
+        _ddc_cache().parent.mkdir(parents=True,exist_ok=True);atomic_text(_ddc_cache(),json.dumps(data))
+    except OSError:pass
+def _ddc_fail():
+    global _ddc_bus,_ddc_retry_at
+    _ddc_bus=None;_ddc_retry_at=time.monotonic()+_DDC_RETRY;_ddc_cache_write(fail_until=time.time()+_DDC_RETRY)
+
+@contextlib.contextmanager
+def _ddc_lock(timeout=6):
+    """One ddcutil per i2c bus: shared by ddc_read, ddc_set and concurrent helper processes."""
+    try:
+        d=cache_dir();d.mkdir(parents=True,exist_ok=True);f=(d/'ddc.lock').open('w')
+    except OSError:
+        yield True;return
+    with f:
+        end=time.monotonic()+timeout;got=False
+        while True:
+            try:fcntl.flock(f,fcntl.LOCK_EX|fcntl.LOCK_NB);got=True;break
+            except OSError:
+                if time.monotonic()>=end:break
+                time.sleep(.05)
+        try:yield got
+        finally:
+            if got:fcntl.flock(f,fcntl.LOCK_UN)
+
+def _ddc_find():
+    global _ddc_bus,_ddc_retry_at
+    if _ddc_bus is not None:return _ddc_bus
+    if time.monotonic()<_ddc_retry_at:return None
+    c=_ddc_cache_read();wall=time.time()
+    try:
+        if isinstance(c.get('bus'),str) and re.fullmatch(r'\d+',c['bus']) and 0<=wall-float(c.get('at',0))<_DDC_TTL:
+            _ddc_bus=c['bus'];return _ddc_bus
+        remaining=float(c.get('fail_until',0))-wall
+    except (TypeError,ValueError):remaining=0
+    if 0<remaining<=_DDC_RETRY:
+        _ddc_retry_at=time.monotonic()+remaining;return None
+    p=subprocess.run(['ddcutil','detect','--brief',*_DDC],capture_output=True,text=True,timeout=4)
+    buses=re.findall(r'I2C bus:\s*/dev/i2c-(\d+)',p.stdout) or re.findall(r'/dev/i2c-(\d+)',p.stdout)
+    if not buses:_ddc_fail();return None
+    _ddc_bus=buses[0];_ddc_cache_write(bus=_ddc_bus,at=wall)
+    return _ddc_bus
+
+def _ddc_read_locked():
+    if not shutil.which('ddcutil'):return {'available':False}
+    try:
+        bus=_ddc_find()
+        if bus is None:return {'available':False}
+        p=subprocess.run(['ddcutil','--bus',bus,'getvcp','10','--terse',*_DDC],capture_output=True,text=True,timeout=2)
         fields=p.stdout.strip().split()
-        if p.returncode or len(fields)<5:
-            _ddc_bus=None;_ddc_retry_at=now+120;return {'available':False}
+        if p.returncode or len(fields)<5:_ddc_fail();return {'available':False}
         current,maximum=float(fields[-2]),float(fields[-1])
         return {'available':maximum>0,'level':current/maximum if maximum else 0,'maximum':maximum}
     except (OSError,ValueError,subprocess.TimeoutExpired):
-        _ddc_bus=None;_ddc_retry_at=time.monotonic()+120;return {'available':False}
+        _ddc_fail();return {'available':False}
+
+def ddc_read():
+    if not shutil.which('ddcutil'):return {'available':False}
+    with _ddc_lock() as got:
+        return _ddc_read_locked() if got else {'available':False,'busy':True}
 
 def ddc_set(value):
-    reading=ddc_read()
-    if not reading['available']:return {'ok':False,'message':'Brilho DDC/CI indisponível'}
-    level=max(0,min(round(reading.get('maximum',100)),round(float(value)*reading.get('maximum',100))))
-    try:
-        p=subprocess.run(['ddcutil','--bus',_ddc_bus,'setvcp','10',str(level)],capture_output=True,text=True,timeout=4)
-        return {'ok':p.returncode==0,'message':p.stderr[:200] or 'Brilho atualizado'}
-    except (OSError,subprocess.TimeoutExpired) as e:return {'ok':False,'message':str(e)}
+    with _ddc_lock() as got:
+        if not got:return {'ok':False,'message':'Brilho DDC/CI ocupado'}
+        reading=_ddc_read_locked()
+        if not reading['available']:return {'ok':False,'message':'Brilho DDC/CI indisponível'}
+        level=max(0,min(round(reading.get('maximum',100)),round(float(value)*reading.get('maximum',100))))
+        try:
+            p=subprocess.run(['ddcutil','--bus',_ddc_bus,'setvcp','10',str(level)],capture_output=True,text=True,timeout=4)
+            return {'ok':p.returncode==0,'message':p.stderr[:200] or 'Brilho atualizado'}
+        except (OSError,subprocess.TimeoutExpired) as e:return {'ok':False,'message':str(e)}
+
+def stop(proc,timeout=2):
+    """terminate, wait, kill as a last resort; safe on None and on an already-reaped child."""
+    if proc is None or proc.poll() is not None:return
+    try:proc.terminate()
+    except OSError:return
+    try:proc.wait(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        try:proc.kill();proc.wait(timeout=timeout)
+        except (OSError,subprocess.TimeoutExpired):pass
+
+def history_sig(config):
+    try:st=history_path(config).stat();return (st.st_mtime_ns,st.st_size)
+    except OSError:return None
 
 def stream(store):
-    cfg=store.reload();output(snapshot(store));last=None;start=time.monotonic();cava=None;clip=None;last_cfg=None;last_brightness=0;cava_missing=False
+    cfg=store.reload();output(snapshot(store));start=time.monotonic();cava=None;clip=None;last_cfg=None;last_brightness=-60;cava_missing=False;clip_retry_at=0;cbuf=b''
+    sig=last_sig=object();items=[];probe=None;probed=queue.SimpleQueue()
     try:
         while True:
             fingerprint=(store.path.read_bytes() if store.path.exists() else b'')
@@ -212,48 +325,66 @@ def stream(store):
                 settings=(cache_dir() if managed() else ROOT/'work')/'cava.conf';settings.parent.mkdir(parents=True,exist_ok=True)
                 settings.write_text(f'[general]\nbars = 12\nframerate = {cfg["cava"]["rate"]}\n[input]\nmethod = pipewire\nsource = auto\n[output]\nmethod = raw\nraw_target = /dev/stdout\ndata_format = ascii\nascii_max_range = 1000\nbar_delimiter = 59\nframe_delimiter = 10\n')
                 # stderr stays inherited so a real device/config failure shows in the honey-shell journal.
-                cava=subprocess.Popen(['cava','-p',str(settings)],stdout=subprocess.PIPE);cava_missing=False
+                cava=subprocess.Popen(['cava','-p',str(settings)],stdout=subprocess.PIPE);cava_missing=False;cbuf=b''
             elif cfg['mode']=='live' and cfg['modules']['cava'] and cava is None and not cava_missing and not shutil.which('cava'):
                 output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava_missing=True
-            if cfg['mode']=='live' and clip is None and shutil.which('wl-paste'):
-                clip=subprocess.Popen(['wl-paste','--watch',sys.executable,str(Path(__file__).resolve()),'capture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+            if clip is not None and clip.poll() is not None:
+                clip.wait();clip=None;clip_retry_at=time.monotonic()+2
+            if cfg['mode']=='live' and clip is None and time.monotonic()>=clip_retry_at and shutil.which('wl-paste'):
+                try:
+                    clip=subprocess.Popen(['wl-paste','--watch',sys.executable,str(Path(__file__).resolve()),'capture'],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
+                except OSError:
+                    clip_retry_at=time.monotonic()+2
             if cfg['mode']=='demo' or not cfg['modules']['cava']:
-                if cava:cava.terminate();cava.wait(timeout=2);cava=None
-            if cfg['mode']=='demo' and clip:clip.terminate();clip.wait(timeout=2);clip=None
+                if cava:stop(cava);cava=None;cbuf=b''
+            if cfg['mode']=='demo' and clip:stop(clip);clip=None;clip_retry_at=0
             if cfg['mode']=='demo':
                 t=time.monotonic()-start
                 bars=[.1+.65*abs(math.sin(t*1.9+i*.6))*abs(math.sin(t*.7+i*.2)) for i in range(12)] if cfg['modules']['cava'] and not cfg['motion']['reduced'] else [0]*12
                 output({'type':'cava','bars':bars,'demo':True})
             elif cava:
                 # Publish only a finished frame. A tick with nothing ready must not zero the bars.
-                latest=None
-                while select.select([cava.stdout],[],[],0)[0]:
-                    raw=cava.stdout.readline()
-                    if not raw:break
-                    latest=raw.decode(errors='replace').strip()
+                fd=cava.stdout.fileno()
+                while select.select([fd],[],[],0)[0]:
+                    chunk=os.read(fd,65536)
+                    if not chunk:break
+                    cbuf+=chunk
+                lines=cbuf.split(b'\n');cbuf=lines.pop()[-65536:]
+                latest=next((l.decode(errors='replace').strip() for l in reversed(lines) if l.strip()),None)
                 if latest:
                     try:output({'type':'cava','bars':[min(1,max(0,float(x)/1000)) for x in latest.split(';') if x][:12]})
                     except ValueError:pass
                 if cava.poll() is not None:
-                    output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava=None
+                    output({'type':'cava','bars':[0]*12,'error':'Cava indisponível'});cava=None;cbuf=b''
             # Every 5s this stalled DP-1 (slow frames of ~50–115 ms). Once a minute is enough for the slider.
-            if managed() and cfg['mode']=='live' and time.monotonic()-last_brightness>60:
-                output({'type':'brightness',**ddc_read()});last_brightness=time.monotonic()
-            h=history(cfg);stamp=json.dumps(h,sort_keys=True)
-            if stamp!=last:output({'type':'clipboard','items':h});last=stamp
+            # ddcutil can take seconds: it runs in a worker thread so the stream keeps serving cava and config.
+            if managed() and cfg['mode']=='live' and (probe is None or not probe.is_alive()) and time.monotonic()-last_brightness>60:
+                last_brightness=time.monotonic();probe=threading.Thread(target=lambda:probed.put(ddc_read()),daemon=True);probe.start()
+            while not probed.empty():output({'type':'brightness',**probed.get()})
+            # The Luau side only uses this packet as a trigger to search again: send a small stamp, parse only when the file changed.
+            sig=history_sig(cfg)
+            if sig!=last_sig:
+                items=history(cfg);output({'type':'clipboard','n':len(items),'stamp':'%s:%s'%(sig or (0,0))});last_sig=sig
             time.sleep(1/cfg['cava']['rate'] if cfg['modules']['cava'] and not cfg['motion']['reduced'] else .5)
     finally:
-        for child in [cava,clip]:
-            if child and child.poll() is None:child.terminate();child.wait(timeout=2)
+        for child in [cava,clip]:stop(child)
+
+def _capacity(request):
+    try:return max(1,min(50,int(request.get('capacity',7))))
+    except (TypeError,ValueError):return 7
 
 def main():
-    parser=argparse.ArgumentParser();parser.add_argument('operation',choices=['snapshot','search','action','stream','capture','prepare']);parser.add_argument('payload',nargs='?',default='{}');args=parser.parse_args()
+    parser=argparse.ArgumentParser();parser.add_argument('operation',choices=['snapshot','search','action','stream','capture','prepare','wallpapers']);parser.add_argument('payload',nargs='?',default='{}');args=parser.parse_args()
     store=Store();cfg=store.reload()
     try:
         request=json.loads(args.payload)
         if args.operation in ['snapshot','prepare']:output(snapshot(store))
-        elif args.operation=='search':output({'rows':search(request['mode'],request.get('query',''),cfg),'generation':request.get('generation',0)})
+        elif args.operation=='search':output({'rows':search(request['mode'],request.get('query',''),cfg,_capacity(request)),'generation':request.get('generation',0)})
         elif args.operation=='action':output(action(request['kind'],request['value'],cfg,store,request.get('confirmed',False)))
+        elif args.operation=='wallpapers':
+            try:cap=max(1,min(24,int(request.get('capacity',12))))
+            except (TypeError,ValueError):cap=12
+            output(wallpapers(cfg,request.get('page',0),cap))
         elif args.operation=='stream':stream(store)
         elif args.operation=='capture':capture(cfg)
     except (OSError,ValueError,KeyError,TypeError,subprocess.SubprocessError) as e:output({'ok':False,'message':str(e)})

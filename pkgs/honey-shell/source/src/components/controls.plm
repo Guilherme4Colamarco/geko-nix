@@ -1,11 +1,15 @@
 library ControlsPanelLibrary {
     component ControlsPanel {
     group {
-        opacity: 1; show: controlson
     prop hot = 0 ~quick
     follow hot = if(controls_hit.hover, 1, 0)
+    on change hot { ctrlhot = hot }
+        opacity: 1; show: controlson
+    // Pointer coordinates are surface-relative; use the visible track origin.
+    // local.x removes parent transforms, not the box's own from offset.
+    // Keep the pointer expression inline: a cached let lags one drag event.
 
-        Honey(sidex - mix(if(compact, 44, 100), 125, controls), mix(if(compact, 88, 200), 250, controls), 40 + controls * 244, ((control_drop - controls) * 3 + hot * 0.15) * deform)
+        zone box controls_body { from: ctlx, 0; size: ctlw, ctlh; active: panel == 2 }
         zone box controls_hit { from: sidex - if(compact, 44, 100), 0; size: if(compact, 88, 200), 40; cursor: pointer }
         on press controls_hit { emit request(2) }
         figure sun { at: sidex - 20, 22; size: 22, 22; color: ink }
@@ -13,24 +17,22 @@ library ControlsPanelLibrary {
         figure muted { at: sidex + 20, 22; size: 22, 22; color: ink; show: muted }
         group { opacity: clamp((controls - 0.6) / 0.4, 0, 1)
             zone box control_inside { from: sidex - 120, 40; size: 240, 240 }
-            text "Controles" { family: "DejaVu Sans"; anchor: left center; at: sidex - 100, 80; size: 21; color: ink }
-            text "Volume  {volume * 100}%" { show: audioavailable; family: "DejaVu Sans"; anchor: left center; at: sidex - 100, 118; size: 13; color: ink }
-            text "Áudio indisponível" { at: sidex - 100, 118; anchor: left center; family: "DejaVu Sans"; size: 13; color: ink; show: not audioavailable }
-            box { from: sidex - 100, 134; size: 200, 9; corner: 4; color: ink; opacity: 0.2 }
-            box { from: sidex - 100, 134; size: 200 * volume, 9; corner: 4; color: orange }
-            ellipse { at: sidex - 100 + 200 * volume, 138; radius: 8; color: ink }
+            text "Controles" { family: "Fredoka"; anchor: left center; at: sidex - 100, 80; size: 22; weight: 600; color: ink }
+            text "Volume  {volume * 100}%" { show: audioavailable; family: "Nunito"; anchor: left center; at: sidex - 100, 118; size: 14; weight: 600; color: ink }
+            text "Áudio indisponível" { at: sidex - 100, 118; anchor: left center; family: "Nunito"; size: 14; weight: 600; color: ink; show: not audioavailable }
+            Fluid(sidex - 100, 134, 200, volume, if(audioavailable, 1, 0), 1)
             zone box volume_track { from: sidex - 100, 123; size: 200, 30; cursor: pointer; active: audioavailable }
-            on press volume_track { volume = clamp(local.x / 200, 0, 1); emit volume_set(clamp(local.x / 200, 0, 1)) }
-            on drag volume_track { volume = clamp(local.x / 200, 0, 1); emit volume_set(clamp(local.x / 200, 0, 1)) }
-            text "Brilho  {brightness * 100}%" { family: "DejaVu Sans"; anchor: left center; at: sidex - 100, 185; size: 13; color: ink; show: backlight }
-            text "Brilho indisponível" { family: "DejaVu Sans"; anchor: left center; at: sidex - 100, 185; size: 13; color: ink; show: not backlight }
-            box { from: sidex - 100, 200; size: 200, 9; corner: 4; color: ink; opacity: 0.2 }
-            box { from: sidex - 100, 200; size: 200 * brightness, 9; corner: 4; color: orange; show: backlight }
+            on press volume_track { volume = clamp((pointer.x - (sidex - 100)) / 200, 0, 1); emit volume_set(clamp((pointer.x - (sidex - 100)) / 200, 0, 1)) }
+            on drag volume_track { volume = clamp((pointer.x - (sidex - 100)) / 200, 0, 1); emit volume_set(clamp((pointer.x - (sidex - 100)) / 200, 0, 1)) }
+            text "Brilho  {brightness * 100}%" { family: "Nunito"; anchor: left center; at: sidex - 100, 185; size: 14; weight: 600; color: ink; show: backlight }
+            text "Brilho indisponível" { family: "Nunito"; anchor: left center; at: sidex - 100, 185; size: 14; weight: 600; color: ink; show: not backlight }
+            Fluid(sidex - 100, 200, 200, brightness, if(backlight, 1, 0), 2)
             zone box brightness_track { from: sidex - 100, 189; size: 200, 30; cursor: pointer; active: backlight }
-            on press brightness_track { brightness = clamp(local.x / 200, 0, 1); emit brightness_set(clamp(local.x / 200, 0, 1)) }
-            on drag brightness_track { brightness = clamp(local.x / 200, 0, 1); emit brightness_set(clamp(local.x / 200, 0, 1)) }
-            box mute_hit { from: sidex - 100, 235; size: 200, 30; corner: 12; color: ink; opacity: 0.1; cursor: pointer; active: audioavailable }
-            text mutelabel { family: "DejaVu Sans"; anchor: left center; at: sidex - 80, 255; size: 12; color: ink }
+            on press brightness_track { brightness = clamp((pointer.x - (sidex - 100)) / 200, 0, 1); emit brightness_set(clamp((pointer.x - (sidex - 100)) / 200, 0, 1)) }
+            on drag brightness_track { brightness = clamp((pointer.x - (sidex - 100)) / 200, 0, 1); emit brightness_set(clamp((pointer.x - (sidex - 100)) / 200, 0, 1)) }
+            Gob(sidex - 100, 235, 200, 30, mute_hit.hover, if(muted, 1, 0), 5)
+            zone box mute_hit { from: sidex - 100, 235; size: 200, 30; cursor: pointer; active: audioavailable }
+            text mutelabel { family: "Nunito"; anchor: left center; at: sidex - 80, 255; size: 13; weight: 600; color: ink }
             figure volume { at: sidex + 76, 251; size: 20, 20; color: ink; show: not muted }
             figure muted { at: sidex + 76, 251; size: 20, 20; color: ink; show: muted }
             on press mute_hit { emit mute }

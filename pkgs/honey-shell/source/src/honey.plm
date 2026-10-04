@@ -6,13 +6,15 @@ import "components/controls.plm"
 import "components/tray.plm"
 import "components/power.plm"
 import "components/result.plm"
+import "components/wallpapers.plm"
+import "components/notifications.plm"
 scene Honey {
 
     surface main {
         size: full, full; anchor: top; level: top, overlay while panel > 0
         reserve: -1; rate: 60; keyboard: exclusive while panel > 0
-    permissions { services: "clock", "apps", "apps.launch", "audio", "audio.*", "brightness", "brightness.level", "tray", "tray.*", "network", "network.*", "bluetooth", "bluetooth.*"; run: "python3" }
-    service clock { time: text = "--:--" }
+    permissions { services: "clock", "apps", "apps.launch", "audio", "audio.*", "brightness", "brightness.level", "tray", "tray.*", "network", "network.*", "bluetooth", "bluetooth.*", "notifications", "notifications.*"; run: "python3" }
+    service clock { time: text = "--:--"; hour: number = -1; minute: number = -1 }
     fact previewphase = -1
     fact panel = 0
     fact target = 0
@@ -28,6 +30,17 @@ scene Honey {
     fact clockon = true
     fact trayon = true
     fact poweron = true
+    fact wallon = true
+    fact noteon = true
+    fact dnd = false
+    fact locked = false
+    fact unread = 0
+    fact notecount = 0
+    text noteinfo = "Nenhuma notificação"
+    fact wallpick = -1
+    fact wallpage = 0
+    fact wallpages = 1
+    text wallinfo = ""
     fact audioavailable = true
     text traybar = "Tray · Wi-Fi · BT"
     fact volume = 0.54
@@ -50,6 +63,9 @@ scene Honey {
     model bands max 12 { level: number }
     model traymini max 5 { key: text; name: text; icon: image 22, 22 }
     model icons max 5 { key: text; name: text; icon: image 22, 22 }
+    model notes max 3 { id: number; app: text; title: text; body: text; icon: image 28, 28; pic: image 56, 56; level: number; actlabel: text; actkey: text; hasact: bool; age: text }
+    model notes_hist max 8 { id: number; app: text; title: text; body: text; icon: image 28, 28; pic: image 56, 56; level: number; actlabel: text; actkey: text; hasact: bool; age: text }
+    model walls max 12 { thumb: image 320, 180; name: text; current: bool }
     model traymenu max 8 { id: number; name: text; enabled: bool; key: text }
     event control ->
     event request ->
@@ -63,16 +79,27 @@ scene Honey {
     event power_action ->
     event tray_action ->
     event tray_context ->
+    event tray_secondary ->
     event tray_click ->
     event tray_wifi ->
     event tray_bt ->
     event tray_back ->
+    event wall_pick ->
+    event note_open ->
+    event note_act ->
+    event note_close ->
+    event note_clear ->
+    event dnd ->
+    event lock_state ->
+    event wall_page ->
     event toggle
     event test_launcher
     event test_controls
     event test_power
     event test_tray
     event test_cava
+    event test_walls
+    event test_notes
     figure bluetooth = file "icons/bluetooth.svg"
     figure lock = file "icons/lock.svg"
     figure logout = file "icons/logout.svg"
@@ -109,55 +136,134 @@ scene Honey {
     follow power = if(target == 4, 1, 0)
     prop media = 0 ~viscous
     follow media = if(target == 5, 1, 0)
-    let centralw = mix(if(compact, 190, 270), pw, melt)
+    prop wallp = 0 ~viscous
+    follow wallp = if(target == 6, 1, 0)
+    let hexr = if(compact, 50, 62)
+    let hexsp = hexr * 1.732 + 8
+    let hexvs = hexr * 1.5 + 8
+    let wallw = min(hexsp * 4.6 + 60, ww - 40)
+    let wallh = min(150 + hexvs * 2 + hexr + 125, hh - 40)
+    prop notep = 0 ~viscous
+    follow notep = if(target == 7, 1, 0)
+    let notew = min(430, ww - 40)
+    let noteh = 330
+    let launchw = mix(if(compact, 190, 270), pw, melt)
+    let launchh = 58 + (ph - 58) * melt
+    // The same central drop opens either into the launcher or into the honeycomb.
+    let centralw = launchw + max(0, wallw - launchw) * wallp + max(0, notew - launchw) * notep
     let centralx = cx - centralw * 0.5
-    let centralh = 58 + (ph - 58) * melt
+    let centralh = launchh + max(0, noteh - launchh) * notep + max(0, wallh - launchh) * wallp
     let revealed = clamp((melt - 0.6) / 0.4, 0, 1)
     let sidex = max(ww * 0.24 - spacing, 150)
     let trayx = min(ww * 0.73 + spacing, ww - if(compact, 210, 310))
     let rightx = ww - if(compact, 100, 190)
     let cw = min(300, ww * 0.25)
+    // Geometry of every top-strip drop, in one place: HoneyTop melts them into
+    // a single body and the panels place their zones and contents from it.
+    fact cavahot = 0
+    fact ctrlhot = 0
+    fact trayhot = 0
+    fact powerhot = 0
+    let cavx = 12
+    let cavw = if(compact, 88, 180) + media * if(compact, 192, 100)
+    let cavh = 42 + media * 190
+    let cavm = media * deform + audioflow + cavahot * 0.15 * deform
+    let ctlx = sidex - mix(if(compact, 44, 100), 125, controls)
+    let ctlw = mix(if(compact, 88, 200), 250, controls)
+    let ctlh = 40 + controls * 244
+    let ctlm = ((control_drop - controls) * 3 + ctrlhot * 0.15) * deform
+    let cenm = ((drop - melt) * 5 + centerhot * 0.15) * deform
+    let trpx = trayx
+    let trpw = mix(if(compact, 90, 175), 280, tray)
+    let trph = 38 + tray * 370
+    let trpm = (tray * 0.4 + trayhot * 0.15) * deform
+    let pwx = rightx - power * 95
+    let pww = mix(if(compact, 88, 160), if(compact, 183, 255), power)
+    let pwh = 38 + power * 314
+    let pwm = (power * 0.5 + powerhot * 0.15) * deform
+    // Notification drops hang under the central body; each slot grows with a slow spring.
+    let toastw = min(330, ww * 0.34)
+    let toastx = cx - toastw * 0.5
+    let toasty = centralh + 22
+    let toasth = 76
+    let toastg = 14
+    prop nt0 = 0 ~drip
+    prop nt1 = 0 ~drip
+    prop nt2 = 0 ~drip
+    follow nt0 = if(notes.count > 0, 1, 0)
+    follow nt1 = if(notes.count > 1, 1, 0)
+    follow nt2 = if(notes.count > 2, 1, 0)
+    let nlv0 = if(notes.count > 0, notes.0.level, 1)
+    let nlv1 = if(notes.count > 1, notes.1.level, 1)
+    let nlv2 = if(notes.count > 2, notes.2.level, 1)
+    let badgex = centralx + centralw - 26
+    let badgey = centralh + 2
     // Declared first: catches outside clicks only while a panel is open.
     zone box outside { from: 0, 0; size: ww, hh; active: panel > 0 }
     on press outside { emit request(0) }
     // Transparent gaps stay pass-through in idle.
+    // One melting body for the whole strip; panels draw only their contents.
+    HoneyTop(cavx, cavw, cavh, cavm, ctlx, ctlw, ctlh, ctlm, centralx, centralw, centralh, cenm, trpx, trpw, trph, trpm, pwx, pww, pwh, pwm, toastx, toasty, toastw, toasth, toastg, nt0, nt1, nt2, nlv0, nlv1, nlv2, unread, badgex, badgey)
     CavaPanel()
     ControlsPanel()
-    // The same physical central body, in idle and launcher; no detached card.
-    Honey(centralx, centralw, centralh, ((drop - melt) * 5 + centerhot * 0.15) * deform)
     shader meniscus { at: centralx, 0; size: centralw, centralh; values: melt, roundness; colors: gold; opacity: melt }
+    zone box launcher_body { from: centralx, 0; size: centralw, centralh; active: panel == 1 }
     zone box launcher_hit { from: cx - if(compact, 95, 135), 0; size: if(compact, 190, 270), 64; cursor: pointer; active: panel != 1 }
     on press launcher_hit { emit request(1) }
-    text clock.time { family: "DejaVu Sans"; at: cx, centralh - 25; anchor: center; size: 28 + melt * 8; weight: 500; color: ink; show: clockon }
+    // Fredoka has proportional digits and pleamar cannot turn on `tnum`, so the
+    // clock is laid out in fixed cells: each digit is centred in its own cell
+    // and the width of "11:11" and "20:08" is the same (no jitter per minute).
+    // `size:` of a text must start with a number literal, so it repeats 28 + melt * 8.
+    let clocksz = 28 + melt * 8
+    let clockcell = clocksz * 0.66
+    let clockgap = clocksz * 0.15
+    let clocky = centralh - 25
+    let clockready = clock.minute >= 0
+    text "{floor(clock.hour / 10)}" { family: "Fredoka"; at: cx - clockgap - clockcell * 1.5, clocky; anchor: center; size: 28 + melt * 8; weight: 600; color: ink; show: clockon and clockready }
+    text "{clock.hour - floor(clock.hour / 10) * 10}" { family: "Fredoka"; at: cx - clockgap - clockcell * 0.5, clocky; anchor: center; size: 28 + melt * 8; weight: 600; color: ink; show: clockon and clockready }
+    text ":" { family: "Fredoka"; at: cx, clocky; anchor: center; size: 28 + melt * 8; weight: 600; color: ink; show: clockon and clockready }
+    text "{floor(clock.minute / 10)}" { family: "Fredoka"; at: cx + clockgap + clockcell * 0.5, clocky; anchor: center; size: 28 + melt * 8; weight: 600; color: ink; show: clockon and clockready }
+    text "{clock.minute - floor(clock.minute / 10) * 10}" { family: "Fredoka"; at: cx + clockgap + clockcell * 1.5, clocky; anchor: center; size: 28 + melt * 8; weight: 600; color: ink; show: clockon and clockready }
+    // Until the service reports, the placeholder in Nunito (tabular digits).
+    text clock.time { family: "Nunito"; at: cx, clocky; anchor: center; size: 28 + melt * 8; weight: 800; color: ink; show: clockon and not clockready }
     group {
         opacity: revealed
         zone box launcher_inside { from: left, 0; size: pw, ph }
-        box { from: left + 24, 20; size: pw - 48, 55; corner: 27; color: orange }
-        input query { at: left + 46, 36; width: pw - 92; size: 19; color: darkink; placeholder: "Buscar…"; selection: gold }
-        text modename { family: "DejaVu Sans"; anchor: left center; at: left + 30, 100; size: 13; weight: 700; color: ink }
+        Gob(left + 24, 20, pw - 48, 55, query_hit.hover * 0.3, 1, 11)
+        zone box query_hit { from: left + 24, 20; size: pw - 48, 55; cursor: text }
+        on press query_hit { focus query }
+        input query { at: left + 46, 36; width: pw - 92; size: 20; weight: 600; family: "Nunito"; color: darkink; placeholder: "Buscar…"; selection: gold }
+        text modename { family: "Fredoka"; anchor: left center; at: left + 30, 100; size: 15; weight: 600; color: ink }
+        prop modex = 0 ~droplet
+        follow modex = mode
+        Gob(left + 24 + modex * (pw - 48) / 6 - min(abs(vel(modex)) * 6, 24) * 0.5, 113, (pw - 48) / 6 - 4 + min(abs(vel(modex)) * 6, 24), 28, 0, 1, 31)
         repeat i in 0..6 {
-            box mode.$i { from: left + 24 + i * (pw - 48) / 6, 113; size: (pw - 48) / 6 - 4, 28; corner: 12; color: if(mode == i, orange, gold); opacity: if(mode == i, 0.9, 0.16); cursor: pointer }
+            Gob(left + 24 + i * (pw - 48) / 6, 113, (pw - 48) / 6 - 4, 28, mode.$i.hover, 0, i + 20)
+            zone box mode.$i { from: left + 24 + i * (pw - 48) / 6, 113; size: (pw - 48) / 6 - 4, 28; cursor: pointer }
             on press mode.$i { emit choosemode(i) }
         }
-        text "Apps" { family: "DejaVu Sans"; anchor: left center; at: left + 36, 132; size: 11; color: ink }
-        text "Arquivos" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + (pw - 48) / 6, 132; size: 11; color: ink }
-        text "Comandos" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 2 * (pw - 48) / 6, 132; size: 11; color: ink }
-        text "Ajustes" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 3 * (pw - 48) / 6, 132; size: 11; color: ink }
-        text "Emoji" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 4 * (pw - 48) / 6, 132; size: 11; color: ink }
-        text "Clipboard" { family: "DejaVu Sans"; anchor: left center; at: left + 28 + 5 * (pw - 48) / 6, 132; size: 11; color: ink }
+        text "Apps" { family: "Nunito"; anchor: left center; at: left + 36, 132; size: 12; weight: 600; color: ink }
+        text "Arquivos" { family: "Nunito"; anchor: left center; at: left + 28 + (pw - 48) / 6, 132; size: 12; weight: 600; color: ink }
+        text "Comandos" { family: "Nunito"; anchor: left center; at: left + 28 + 2 * (pw - 48) / 6, 132; size: 12; weight: 600; color: ink }
+        text "Ajustes" { family: "Nunito"; anchor: left center; at: left + 28 + 3 * (pw - 48) / 6, 132; size: 12; weight: 600; color: ink }
+        text "Emoji" { family: "Nunito"; anchor: left center; at: left + 28 + 4 * (pw - 48) / 6, 132; size: 12; weight: 600; color: ink }
+        text "Clipboard" { family: "Nunito"; anchor: left center; at: left + 28 + 5 * (pw - 48) / 6, 132; size: 12; weight: 600; color: ink }
         column results { at: left + 24, 150; gap: 3
             for h in hits { Result(h, pw - 48) }
         }
-        text commandout { family: "DejaVu Sans"; anchor: left center; at: left + 30, 169; size: 13; width: pw - 65; lines: 9; color: ink; show: mode == 2 }
-        text status { family: "DejaVu Sans"; anchor: left center; at: left + 30, ph - 72; size: 11; width: pw - 60; lines: 2; color: ink }
-        text "↑ ↓ selecionar · Enter executar · Esc fechar" { family: "DejaVu Sans"; anchor: left center; at: left + 30, ph - 47; size: 10; color: ink }
+        text commandout { family: "Nunito"; anchor: left center; at: left + 30, 169; size: 14; weight: 500; width: pw - 65; lines: 9; color: ink; show: mode == 2 }
+        text status { family: "Nunito"; anchor: left center; at: left + 30, ph - 85; size: 12; weight: 600; width: pw - 60; lines: 2; color: ink }
+        text "↑ ↓ selecionar · Enter executar · Esc fechar" { family: "Nunito"; anchor: left center; at: left + 30, ph - 60; size: 11; weight: 600; color: ink }
     }
+    WallPanel()
+    NotePanel()
+    NoteToasts()
     TrayPanel()
     PowerPanel()
-    text backend { family: "DejaVu Sans"; anchor: left center; at: 16, hh - 22; size: 11; color: gold; opacity: 0.85; show: demo }
-    text configerror { family: "DejaVu Sans"; anchor: left center; at: 16, hh - 44; size: 12; color: #ffbc82; width: ww - 32; lines: 2 }
-    text status { family: "DejaVu Sans"; at: ww * .5, hh - 25; anchor: center; size: 12; color: gold; width: ww * .6; show: panel != 1 }
-    on change ph { capacity = min(7, max(1, floor((ph - 235) / 43))); emit resized }
+    text backend { family: "Nunito"; anchor: left center; at: 16, hh - 22; size: 12; weight: 600; color: gold; opacity: 0.85; show: demo }
+    text configerror { family: "Nunito"; anchor: left center; at: 16, hh - 44; size: 13; weight: 600; color: #ffbc82; width: ww - 32; lines: 2 }
+    text status { family: "Nunito"; at: ww * .5, hh - 25; anchor: center; size: 13; weight: 600; color: gold; width: ww * .6; show: panel > 1 }
+    on change ph { capacity = min(7, max(1, floor((ph - 248) / 43))); emit resized }
     // Close through the outside zone or Esc. A compositor may deliver a
     // delayed focus loss from the previous panel during a panel handoff.
     on key Escape { emit request(0) }
@@ -175,5 +281,9 @@ scene Honey {
     on change tray while target == 0 and panel == 3 and abs(tray) < 0.008 { emit settled }
     on change power while target == 0 and panel == 4 and abs(power) < 0.008 { emit settled }
     on change media while target == 0 and panel == 5 and abs(media) < 0.008 { emit settled }
+    on change wallp while target == 0 and panel == 6 and abs(wallp) < 0.008 { emit settled }
+    on change notep while target == 0 and panel == 7 and abs(notep) < 0.008 { emit settled }
+    on test_walls { emit request(6) }
+    on test_notes { emit request(7) }
 }
 }

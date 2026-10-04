@@ -1,0 +1,21 @@
+library WallpaperPanelLibrary {
+    // Wallpaper picker: the central drop grows into a honeycomb of 12 cells.
+    component WallPanel {
+    group { opacity: clamp((wallp - 0.6) / 0.4, 0, 1); show: wallon
+        zone box wall_inside { from: centralx, 0; size: centralw, centralh; active: panel == 6 }
+        text "Wallpapers" { family: "Fredoka"; anchor: left center; at: cx - wallw * 0.5 + 34, 52; size: 23; weight: 600; color: ink }
+        text wallinfo { family: "Nunito"; anchor: right center; at: cx + wallw * 0.5 - 34, 54; size: 12; weight: 600; color: ink; opacity: 0.8 }
+        for w in walls {
+            HexWall(cx + (mod(w.index, 4) - 1.5) * hexsp - hexsp * 0.25 + if(mod(floor(w.index / 4), 2) == 1, hexsp * 0.5, 0), 150 + floor(w.index / 4) * hexvs, hexr, w)
+        }
+        Gob(cx - 70, wallh - 62, 56, 28, wall_prev.hover, 0, 51)
+        zone box wall_prev { from: cx - 70, wallh - 62; size: 56, 28; cursor: pointer; active: wallpage > 0 }
+        text "‹" { family: "Nunito"; anchor: center; at: cx - 42, wallh - 49; size: 18; weight: 700; color: ink; opacity: if(wallpage > 0, 1, 0.3) }
+        on press wall_prev { emit wall_page(-1) }
+        Gob(cx + 14, wallh - 62, 56, 28, wall_next.hover, 0, 52)
+        zone box wall_next { from: cx + 14, wallh - 62; size: 56, 28; cursor: pointer; active: wallpage < wallpages - 1 }
+        text "›" { family: "Nunito"; anchor: center; at: cx + 42, wallh - 49; size: 18; weight: 700; color: ink; opacity: if(wallpage < wallpages - 1, 1, 0.3) }
+        on press wall_next { emit wall_page(1) }
+    }
+    }
+}

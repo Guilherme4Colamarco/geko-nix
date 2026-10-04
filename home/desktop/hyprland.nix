@@ -21,10 +21,11 @@ in {
           col = { active_border = "rgba(ffdb85ff)", inactive_border = "rgba(594225ff)" } },
         decoration = { rounding = 12, blur = { enabled = true, size = 4, passes = 2 } },
         dwindle = { preserve_split = true },
-        misc = { disable_hyprland_logo = true, disable_splash_rendering = true },
+        -- font_family vale para a barra de erro, hyprctl notify e groupbar.
+        misc = { disable_hyprland_logo = true, disable_splash_rendering = true, font_family = "Nunito" },
       })
       hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1.0 })
-      hl.monitor({ output = "DP-1", mode = "1920x1080@165", position = "0x0", scale = 1.25 })
+      hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "0x0", scale = 1.25 })
       hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "default" })
       hl.env("XCURSOR_THEME", "Adwaita")
       hl.env("XCURSOR_SIZE", "24")
@@ -37,6 +38,8 @@ in {
       execbind("SUPER + COMMA", ${quote "${ctl} toggle settings"})
       execbind("SUPER + L", ${quote "${ctl} lock"})
       execbind("SUPER + SHIFT + E", ${quote "${ctl} toggle power"})
+      execbind("SUPER + SHIFT + W", ${quote "${ctl} toggle wallpapers"})
+      execbind("SUPER + SHIFT + N", ${quote "${ctl} toggle notifications"})
       execbind("PRINT", ${quote "${ctl} screenshot region"})
       execbind("SHIFT + PRINT", ${quote "${ctl} screenshot screen"})
       hl.bind("SUPER + Q", hl.dsp.window.close())

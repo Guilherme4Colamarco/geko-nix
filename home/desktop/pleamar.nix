@@ -11,6 +11,8 @@ let
     "bind Super+comma launch ${ctl} toggle settings"
     "bind Super+l launch ${ctl} lock"
     "bind Super+Shift+e launch ${ctl} toggle power"
+    "bind Super+Shift+w launch ${ctl} toggle wallpapers"
+    "bind Super+Shift+n launch ${ctl} toggle notifications"
     "bind Print launch ${ctl} screenshot region"
     "bind Shift+Print launch ${ctl} screenshot screen"
     "bind Super+q close" "bind Super+f fullscreen" "bind Super+Shift+f toggle_float"
@@ -35,6 +37,16 @@ let
       --replace-fail '#151616' '#24201b'
     # Remove upstream notifications to the optional Marea shell, keeping WM layout rules.
     sed -i "/launch.*--say marea/d" $out/session.plm
+    # O texto do WM (tooltips, badges e dígitos de workspace; não há texto em barra
+    # de título) não declara `family:` e cai no
+    # sans-serif do fontdb, que não segue fonts.fontconfig.defaultFonts
+    # (o fontdb fica com o ÚLTIMO alias sans-serif que lê; hoje 69-unifont.conf,
+    # FreeSans, não o 52-nixos-default-fonts.conf). Nomeia Nunito.
+    sed -i -E '/^\s*(text|input) [^=]*\{/{/family:/!s/\{ /{ family: "Nunito"; /}' $out/session.plm
+    # Nunito é menor que a DejaVu (x-height 0,484 contra 0,547): tooltips ganham 1 px.
+    sed -i 's/size: 12; weight: 600; color: ink; measure/size: 13; weight: 700; color: ink; measure/' $out/session.plm
+    # Todo elemento `text` precisa ter recebido a família; senão o texto cairia em silêncio no fallback.
+    test "$(grep -c 'family: "Nunito"' $out/session.plm)" -ge "$(grep -cE '^[[:space:]]*text ' $out/session.plm)"
     pleamar --check $out/session.plm
   '';
 in {
@@ -47,7 +59,7 @@ in {
       ++ lib.concatMap (i: [ "bind Super+${toString i} workspace ${toString i}" "bind Super+Shift+${toString i} move_to_workspace ${toString i}" ]) (lib.range 1 9)) + "\n";
     "pleamar/session.conf".text = ''
       monitor "" preferred scale 1
-      monitor DP-1 1920x1080@165 at 0,0 scale 1.25
+      monitor DP-1 1920x1080@165.003 at 0,0 scale 1.25
       keyboard layout br repeat 25 delay 400
       pointer accel flat speed 0
       touchpad natural on tap on dwt on
