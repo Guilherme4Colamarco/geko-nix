@@ -1,3 +1,4 @@
+# Programas do canal estável (nixos-26.05): editor, monitor/brilho, navegadores e Logitech.
 { pkgs, ... }:
 
 {
@@ -7,20 +8,19 @@
     defaultEditor = true;
   };
 
-  # Ryoku manages ~/.config/nvim, so AstroVim uses its own Nix-managed config.
+  # O AstroNvim usa a própria config gerenciada pelo Nix (home/default.nix).
   environment.variables.NVIM_APPNAME = "astronvim";
   environment.variables.VISUAL = "nvim";
 
-  # Monitor brightness controls (DDC/CI CLI and graphical app).
   environment.systemPackages = with pkgs; [
+    # Brilho do monitor (DDC/CI): CLI e app gráfico.
     ddcutil
     ddcui
-    # Nix-packaged agent-browser uses the NixOS dynamic loader, unlike Hermes's generic Linux bundle.
+    # Navegador para agentes; usa o carregador dinâmico do NixOS.
     agent-browser
-    # Keep Ryoku/Hyprland's GNOME file-manager and keyring dependencies
-    # available even when Pantheon is disabled.
+    # Chaveiro do GNOME, usado pelos apps de sessão.
     gnome-keyring
-    pkgs.solaar
-    pkgs.browsers
+    solaar
+    browsers
   ];
 }

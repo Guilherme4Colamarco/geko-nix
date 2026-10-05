@@ -1,28 +1,30 @@
+# Placa NVIDIA dedicada (RTX 20/30/40/50): driver aberto, KMS e aceleração de vídeo.
+# Tudo com mkDefault, então pode ser sobrescrito em outro módulo.
 { config, lib, pkgs, ... }:
 
 {
-  # --- DISCRETE NVIDIA DESKTOP GPU (RTX 50/40/30/20 Series) ---
+  # --- GPU NVIDIA dedicada ---
   services.xserver.videoDrivers = [ "nvidia" ];
 
   hardware.nvidia = {
-    # Modesetting is required for Wayland / KMS
+    # Modesetting é obrigatório para Wayland / KMS
     modesetting.enable = lib.mkDefault true;
 
-    # Power management for sleep/suspend
+    # Gerenciamento de energia para suspender
     powerManagement.enable = lib.mkDefault true;
     powerManagement.finegrained = lib.mkDefault false;
 
-    # Modern open-source kernel modules (standard for Turing, Ada, Blackwell / RTX 50-series)
+    # Módulos de kernel abertos (padrão de Turing, Ada e Blackwell / RTX 50)
     open = lib.mkDefault true;
 
-    # NVIDIA control panel GUI
+    # Painel de controle da NVIDIA
     nvidiaSettings = lib.mkDefault true;
 
-    # Latest driver release
+    # Driver estável
     package = lib.mkDefault config.boot.kernelPackages.nvidiaPackages.stable;
   };
 
-  # Hardware video acceleration
+  # Aceleração de vídeo por hardware
   hardware.graphics = {
     enable = true;
     enable32Bit = true;
@@ -34,7 +36,7 @@
     ];
   };
 
-  # Wayland & desktop compositor environment variables
+  # Variáveis de ambiente para Wayland e compositores
   environment.sessionVariables = {
     LIBVA_DRIVER_NAME = lib.mkDefault "nvidia";
     __GLX_VENDOR_LIBRARY_NAME = lib.mkDefault "nvidia";
@@ -42,6 +44,6 @@
     ELECTRON_OZONE_PLATFORM_HINT = lib.mkDefault "auto";
   };
 
-  # Early KMS for Wayland compositors
+  # KMS cedo no boot (initrd) para compositores Wayland
   boot.initrd.kernelModules = [ "nvidia" "nvidia_modeset" "nvidia_uvm" "nvidia_drm" ];
 }

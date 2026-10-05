@@ -1,7 +1,9 @@
+# Docker: motor, limpeza semanal, grupo docker para o usuário e utilitários.
+# Nenhum container sobe sozinho.
 { pkgs, ... }:
 
 {
-  # --- DOCKER ENGINE CONFIGURATION ---
+  # --- Motor do Docker ---
   virtualisation.docker = {
     enable = true;
     autoPrune = {
@@ -19,15 +21,13 @@
     };
   };
 
-  # Add geko to docker group to run docker CLI without sudo
+  # Usar docker sem sudo (o grupo docker equivale a administrador)
   users.users.geko.extraGroups = [ "docker" ];
 
-  # Docker utils
+  # Utilitários do Docker
   environment.systemPackages = with pkgs; [
     docker-compose
     lazydocker
     ctop
   ];
-
-  # No containers or server stacks are started by this workstation profile.
 }
