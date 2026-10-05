@@ -69,7 +69,7 @@
       }
       cursor { xcursor-theme "Adwaita"; xcursor-size 35; }
       // O niri não tem opção de fonte: overlay de atalhos, UI de captura e avisos usam
-      // pango "sans 14px", que segue fonts.fontconfig.defaultFonts (honey-common.nix).
+      // pango "sans 14px", que segue fonts.fontconfig.defaultFonts (desktops/_comum-honey.nix).
       hotkey-overlay { skip-at-startup; }
       prefer-no-csd
       screenshot-path "~/Imagens/Capturas/%Y-%m-%d_%H-%M-%S.png"

@@ -4,7 +4,7 @@ Os perfis `pleamar`, `niri` e `hyprland` usam o mesmo shell Honey. `nixos` e `se
 
 ## Onde configurar
 
-`home/desktop/honey.nix` define o módulo `programs.honeyShell` e os padrões comuns. Os módulos irmãos definem compositor, entrada, atalhos e aparência. Os registros de sessão, PAM e portais ficam em `modules/desktop/`.
+`home/honey.nix` define o módulo `programs.honeyShell` e os padrões comuns. Cada perfil em `desktops/` (`pleamar.nix`, `niri-honey.nix`, `hyprland-honey.nix`) define compositor, entrada, atalhos e aparência; sistema e usuário ficam no mesmo arquivo. Sessão, PAM e portais estão na parte de sistema de cada arquivo e em `desktops/_comum-honey.nix`.
 
 Exemplo de preferências declarativas:
 
@@ -68,7 +68,7 @@ O corpo (`components/material.plm`, componente `Honey`) é uma caixa com seis ca
 
 ## Tipografia
 
-Nunito no texto de UI (peso 600 em texto pequeno, +1 px sobre a DejaVu por causa do x-height menor) e Fredoka nos títulos e nos dígitos do relógio. O pleamar só repassa `family` e `weight`: não há `tnum`, e `family:` só aceita string literal (não aceita `let`), então os nomes estão escritos em cada `text` e `tests/test_fonts.py` falha se algum nome estiver errado, já que um nome errado cai em silêncio no fallback. Como os dígitos da Fredoka são proporcionais, o relógio é montado com um `text` por dígito, cada um centralizado numa célula fixa (`clockcell`); se algum dígito encostar no vizinho, aumente a célula. As fontes vêm de `modules/desktop/honey-common.nix` (`pkgs.nunito` e `google-fonts` só com a Fredoka) e `fonts.fontconfig.defaultFonts.sansSerif` passa a ser Nunito, o que alcança GTK, Qt e o niri (pango "sans"). Hyprland usa `misc.font_family`, o swaylock tem `font=`, e o texto do pleamar-wm recebe `family: "Nunito"` por `sed` na cena (ele ignora o fontconfig padrão). Depois de aplicar, reinicie o `honey-shell`: o pleamar lê a lista de fontes só na partida.
+Nunito no texto de UI (peso 600 em texto pequeno, +1 px sobre a DejaVu por causa do x-height menor) e Fredoka nos títulos e nos dígitos do relógio. O pleamar só repassa `family` e `weight`: não há `tnum`, e `family:` só aceita string literal (não aceita `let`), então os nomes estão escritos em cada `text` e `tests/test_fonts.py` falha se algum nome estiver errado, já que um nome errado cai em silêncio no fallback. Como os dígitos da Fredoka são proporcionais, o relógio é montado com um `text` por dígito, cada um centralizado numa célula fixa (`clockcell`); se algum dígito encostar no vizinho, aumente a célula. As fontes vêm de `desktops/_comum-honey.nix` (`pkgs.nunito` e `google-fonts` só com a Fredoka) e `fonts.fontconfig.defaultFonts.sansSerif` passa a ser Nunito, o que alcança GTK, Qt e o niri (pango "sans"). Hyprland usa `misc.font_family`, o swaylock tem `font=`, e o texto do pleamar-wm recebe `family: "Nunito"` por `sed` na cena (ele ignora o fontconfig padrão). Depois de aplicar, reinicie o `honey-shell`: o pleamar lê a lista de fontes só na partida.
 
 ## Notificações
 
