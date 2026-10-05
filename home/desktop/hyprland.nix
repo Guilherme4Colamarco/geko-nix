@@ -3,7 +3,7 @@ let
   honey = config.programs.honeyShell.package.override { settings = config.programs.honeyShell.settings; };
   ctl = "${honey}/bin/honeyctl";
   quote = builtins.toJSON;
-  media = { XF86AudioRaiseVolume="volume-up"; XF86AudioLowerVolume="volume-down"; XF86AudioMute="mute"; XF86AudioMicMute="mic-mute"; XF86AudioPlay="play-pause"; XF86AudioPause="play-pause"; XF86AudioNext="next"; XF86AudioPrev="previous"; XF86MonBrightnessUp="brightness-up"; XF86MonBrightnessDown="brightness-down"; };
+  media = import ./media-keys.nix;
 in {
   imports = [ ./honey.nix ];
   programs.honeyShell.enable = true;

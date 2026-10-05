@@ -26,7 +26,7 @@ let
     "bind Super+Ctrl+Up workspace_previous" "bind Super+Ctrl+Down workspace_next"
     "gesture swipe4_left focus_previous" "gesture swipe4_right focus_next"
   ];
-  media = { XF86AudioRaiseVolume="volume-up"; XF86AudioLowerVolume="volume-down"; XF86AudioMute="mute"; XF86AudioMicMute="mic-mute"; XF86AudioPlay="play-pause"; XF86AudioPause="play-pause"; XF86AudioNext="next"; XF86AudioPrev="previous"; XF86MonBrightnessUp="brightness-up"; XF86MonBrightnessDown="brightness-down"; };
+  media = import ./media-keys.nix;
   scene = pkgs.runCommand "honey-wm-scene" { nativeBuildInputs = [ inputs.pleamar-wm.inputs.pleamar.packages.${pkgs.stdenv.hostPlatform.system}.pleamar ]; } ''
     mkdir -p $out
     cp ${inputs.pleamar-wm}/examples/session.plm $out/session.plm
