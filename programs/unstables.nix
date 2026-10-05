@@ -16,7 +16,6 @@
     nix-index
 
   ] ++ [
-    inputs.chatgpt-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default
     inputs.claude-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default
   ];
 
