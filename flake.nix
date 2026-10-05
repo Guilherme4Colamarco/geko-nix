@@ -35,6 +35,13 @@
     system = "x86_64-linux";
     unstablePkgs = import inputs.nixpkgs-unstable { inherit system; config.allowUnfree = true; };
     desktopPkgs = import serpantinum.inputs.nixpkgs { inherit system; config.allowUnfree = true; };
+    # Cada perfil de desktop é um arquivo em desktops/ (sistema + usuário juntos).
+    desktops = {
+      serpantinum = ./desktops/serpantinum.nix;
+      pleamar = ./desktops/pleamar.nix;
+      niri = ./desktops/niri-honey.nix;
+      hyprland = ./desktops/hyprland-honey.nix;
+    };
     mkDesktop = desktop: nixpkgs.lib.nixosSystem {
       inherit system;
       specialArgs = { inherit inputs unstablePkgs desktopPkgs; desktopProfile = desktop; };
@@ -61,15 +68,7 @@
           home-manager.extraSpecialArgs = { inherit inputs; };
           home-manager.users.${config.geko.usuario.nome} = import ./home;
         })
-      ] ++ (if desktop == "serpantinum" then [
-        serpantinum.nixosModules.default ./modules/desktop/serpantinum.nix
-      ] else if desktop == "pleamar" then [
-        inputs.pleamar-wm.nixosModules.default ./modules/desktop/pleamar.nix
-      ] else if desktop == "niri" then [
-        ./modules/desktop/niri.nix
-      ] else [
-        ./modules/desktop/hyprland.nix
-      ]);
+      ] ++ [ desktops.${desktop} ];
     };
   in {
     checks.${system} = nixpkgs.lib.genAttrs [ "honey-pleamar" "honey-pleamar-core" "honey-niri" "honey-hyprland" ] (name:

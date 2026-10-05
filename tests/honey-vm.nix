@@ -1,5 +1,6 @@
 { pkgs, inputs, desktopPkgs, unstablePkgs, compositor, requireCapture ? true }:
 let
+  perfil = { pleamar = "pleamar"; niri = "niri-honey"; hyprland = "hyprland-honey"; }.${compositor};
   niriTestSession = pkgs.writeShellScript "honey-niri-vm-session" ''
     mkdir -p "$HOME/.local/state"
     ${pkgs.weston}/bin/weston --backend=drm --renderer=pixman --socket=honey-test-parent --idle-time=0 > "$HOME/.local/state/honey-test-weston.log" 2>&1 &
@@ -18,8 +19,7 @@ in pkgs.testers.runNixOSTest {
   name = "honey-${compositor}";
   node.specialArgs = { inherit inputs desktopPkgs unstablePkgs; };
   nodes.machine = { config, lib, pkgs, ... }: {
-    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../modules/desktop/${compositor}.nix ]
-      ++ lib.optional (compositor == "pleamar") inputs.pleamar-wm.nixosModules.default;
+    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../desktops/${perfil}.nix ];
     virtualisation = { graphics = true; qemu.options = [ "-vga none -device virtio-gpu-pci" "-display none" ]; memorySize = 4096; cores = 4; resolution = { x = 1920; y = 1080; }; };
     hardware.graphics.enable = true;
     hardware.i2c.enable = true; # antes vinha do honey-common; em produção vem do configuration.nix

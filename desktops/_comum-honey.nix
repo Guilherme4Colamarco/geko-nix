@@ -4,7 +4,7 @@ let
   # Fredoka[wdth,wght].ttf (build local, hydraPlatforms = [ ]).
   fredoka = pkgs.google-fonts.override { fonts = [ "Fredoka" ]; };
 in {
-  imports = [ ./comum.nix ];
+  imports = [ ./_comum.nix ];
   security.pam.services.swaylock = {};
   environment.systemPackages = [ pkgs.adwaita-icon-theme ];
 

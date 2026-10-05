@@ -11,7 +11,7 @@ let
 in {
   options.programs.honeyShell = {
     enable = lib.mkEnableOption "Honey desktop shell";
-    package = lib.mkOption { type = lib.types.package; default = pkgs.callPackage ../../pkgs/honey-shell { pleamar = runtime; settings = cfg.settings; }; description = "Honey package supporting the settings override."; };
+    package = lib.mkOption { type = lib.types.package; default = pkgs.callPackage ../pkgs/honey-shell { pleamar = runtime; settings = cfg.settings; }; description = "Honey package supporting the settings override."; };
     settings = lib.mkOption { type = lib.types.attrsOf lib.types.anything; default = {}; description = "Declarative Honey settings, merged with the Honey preset."; };
   };
   config = lib.mkIf cfg.enable {
@@ -26,7 +26,7 @@ in {
     home.pointerCursor = { package = pkgs.adwaita-icon-theme; name = "Adwaita"; size = 35; gtk.enable = true; };
     # Fonte de UI dos apps GTK 2/3/4 (settings.ini) e do dconf
     # org.gnome.desktop.interface font-name, que libadwaita lê pelo portal.
-    # O pacote vem de fonts.packages em modules/desktop/honey-common.nix.
+    # O pacote vem de fonts.packages em desktops/_comum-honey.nix.
     gtk = { enable = true; font = { name = "Nunito"; size = 11; }; };
     # Hoje settings.ini é um arquivo solto e somente leitura; force evita que um backup
     # *.before-geko-nix antigo bloqueie a ativação do home-manager.

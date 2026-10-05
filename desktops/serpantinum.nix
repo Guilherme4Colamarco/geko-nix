@@ -2,7 +2,7 @@
   cfg = config.geko.desktop;
   command = value: builtins.toJSON value;
 in {
-  imports = [ ./comum.nix ];
+  imports = [ inputs.serpantinum.nixosModules.default ./_comum.nix ];
   programs.serpantinum.enable = true;
   programs.hyprland = {
     enable = true;
@@ -23,7 +23,7 @@ in {
     systemd.user.targets.hyprland-session = {
       Unit = { Description = "Sessão Hyprland do geko"; BindsTo = [ "graphical-session.target" ]; Wants = [ "graphical-session-pre.target" ]; After = [ "graphical-session-pre.target" ]; };
     };
-    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../../config/hyprland/serpantinum.lua + ''
+    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../config/hyprland/serpantinum.lua + ''
       execbind("SUPER + RETURN", ${command (lib.getExe cfg.terminal)})
       execbind("SUPER + E", ${command (lib.getExe cfg.fileManager)})
       hl.on("hyprland.start", function()
