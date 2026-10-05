@@ -1,7 +1,7 @@
 # Configuração base da máquina: boot, rede, idioma (pt-BR), teclado, som,
 # impressão e o usuário. O que é de desktop, programas ou hardware específico
 # fica em desktops/, programs/ e modules/. Veja o README.
-{ ... }:
+{ config, ... }:
 
 {
   imports = [
@@ -74,9 +74,9 @@
   };
 
   # Usuário principal. Defina a senha com `passwd` depois da instalação.
-  users.users."geko" = {
+  users.users.${config.geko.usuario.nome} = {
     isNormalUser = true;
-    description = "geko";
+    description = config.geko.usuario.nome;
     extraGroups = [ "networkmanager" "wheel" "i2c" ];
   };
 

@@ -18,7 +18,7 @@ in pkgs.testers.runNixOSTest {
   name = "honey-${compositor}";
   node.specialArgs = { inherit inputs desktopPkgs unstablePkgs; };
   nodes.machine = { config, lib, pkgs, ... }: {
-    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/desktop/${compositor}.nix ]
+    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../modules/desktop/${compositor}.nix ]
       ++ lib.optional (compositor == "pleamar") inputs.pleamar-wm.nixosModules.default;
     virtualisation = { graphics = true; qemu.options = [ "-vga none -device virtio-gpu-pci" "-display none" ]; memorySize = 4096; cores = 4; resolution = { x = 1920; y = 1080; }; };
     hardware.graphics.enable = true;

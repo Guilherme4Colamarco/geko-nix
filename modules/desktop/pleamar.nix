@@ -1,4 +1,4 @@
-{ pkgs, inputs, ... }: {
+{ config, pkgs, inputs, ... }: {
   imports = [ ./honey-common.nix ];
   programs.pleamar-wm = {
     enable = true;
@@ -15,5 +15,5 @@
     "org.freedesktop.impl.portal.Notification" = [ "gtk" ];
     "org.freedesktop.impl.portal.Secret" = [ "gnome-keyring" ];
   };
-  home-manager.users.geko.imports = [ ../../home/desktop/pleamar.nix ];
+  home-manager.users.${config.geko.usuario.nome}.imports = [ ../../home/desktop/pleamar.nix ];
 }

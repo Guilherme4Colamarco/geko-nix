@@ -1,4 +1,4 @@
-{ pkgs, desktopPkgs, ... }: {
+{ config, pkgs, desktopPkgs, ... }: {
   imports = [ ./honey-common.nix ];
   programs.hyprland = {
     enable = true;
@@ -8,5 +8,5 @@
   services.displayManager.defaultSession = "hyprland";
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
-  home-manager.users.geko.imports = [ ../../home/desktop/hyprland.nix ];
+  home-manager.users.${config.geko.usuario.nome}.imports = [ ../../home/desktop/hyprland.nix ];
 }

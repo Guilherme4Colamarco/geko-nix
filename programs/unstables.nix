@@ -1,4 +1,4 @@
-{ inputs, unstablePkgs, ... }:
+{ config, inputs, unstablePkgs, ... }:
 
 {
   environment.systemPackages = with unstablePkgs; [
@@ -20,6 +20,6 @@
   ];
 
   # Claude Desktop's local Cowork VM needs these devices; no VM autostarts.
-  users.users.geko.extraGroups = [ "kvm" ];
+  users.users.${config.geko.usuario.nome}.extraGroups = [ "kvm" ];
   boot.kernelModules = [ "vhost_vsock" ];
 }

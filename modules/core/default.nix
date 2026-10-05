@@ -1,6 +1,9 @@
-{ pkgs, desktopProfile ? "nixos", ... }: {
+{ config, pkgs, desktopProfile ? "nixos", ... }:
+let
+  usuario = config.geko.usuario.nome;
+in {
   programs.fish.enable = true;
-  users.users.geko.shell = pkgs.fish;
+  users.users.${usuario}.shell = pkgs.fish;
   programs.nix-ld.enable = true;
   environment.systemPackages = with pkgs; [
     ntfs3g exfatprogs dosfstools rsync gparted git micro zoxide tree
@@ -10,7 +13,7 @@
   nix.settings.auto-optimise-store = true;
   system.autoUpgrade = {
     enable = true;
-    flake = "/home/geko/Documentos/geko-nix#${desktopProfile}";
+    flake = "/home/${usuario}/Documentos/geko-nix#${desktopProfile}";
     operation = "boot";
     allowReboot = false;
     dates = "04:40";
@@ -26,7 +29,7 @@
   };
   programs.nh = {
     enable = true;
-    flake = "/home/geko/Documentos/geko-nix";
+    flake = "/home/${usuario}/Documentos/geko-nix";
     clean = { enable = true; extraArgs = "--keep 10 --keep-since 14d"; };
   };
   xdg.mime.defaultApplications = {

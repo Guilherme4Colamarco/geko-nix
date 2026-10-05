@@ -1,7 +1,7 @@
-{ inputs, pkgs, ... }: {
+{ inputs, pkgs, osConfig, ... }: {
   imports = [ ./fish.nix ./claude-code.nix ];
-  home.username = "geko";
-  home.homeDirectory = "/home/geko";
+  home.username = osConfig.geko.usuario.nome;
+  home.homeDirectory = "/home/${osConfig.geko.usuario.nome}";
   home.stateVersion = "26.05";
   home.packages = [ pkgs.mcp-nixos ];
   xdg.enable = true;

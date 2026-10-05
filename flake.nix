@@ -43,6 +43,7 @@
         home-manager.nixosModules.home-manager
         ./configuration.nix
         ./modules/core
+        ./modules/core/usuario.nix
         ./modules/hardware/nvidia-desktop.nix
         ./modules/services/docker.nix
         ./modules/services/homelab.nix
@@ -53,13 +54,13 @@
         ./programs/development.nix
         ./programs/flatpaks.nix
         ./programs/faculdade.nix
-        {
+        ({ config, ... }: {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
           home-manager.backupFileExtension = "before-geko-nix";
           home-manager.extraSpecialArgs = { inherit inputs; };
-          home-manager.users.geko = import ./home;
-        }
+          home-manager.users.${config.geko.usuario.nome} = import ./home;
+        })
       ] ++ (if desktop == "serpantinum" then [
         serpantinum.nixosModules.default ./modules/desktop/serpantinum.nix
       ] else if desktop == "pleamar" then [

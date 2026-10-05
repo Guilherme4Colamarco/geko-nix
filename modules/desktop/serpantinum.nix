@@ -13,7 +13,7 @@ in {
   environment.systemPackages = [ pkgs.adwaita-icon-theme pkgs.playerctl ] ++ lib.optionals cfg.clipboard.enable [ pkgs.wl-clipboard pkgs.cliphist ];
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
-  home-manager.users.geko = {
+  home-manager.users.${config.geko.usuario.nome} = {
     imports = [ inputs.serpantinum.homeManagerModules.default ];
     programs.serpantinum = {
       enable = true;

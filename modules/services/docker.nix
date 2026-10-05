@@ -1,6 +1,6 @@
 # Docker: motor, limpeza semanal, grupo docker para o usuário e utilitários.
 # Nenhum container sobe sozinho.
-{ pkgs, ... }:
+{ config, pkgs, ... }:
 
 {
   # --- Motor do Docker ---
@@ -22,7 +22,7 @@
   };
 
   # Usar docker sem sudo (o grupo docker equivale a administrador)
-  users.users.geko.extraGroups = [ "docker" ];
+  users.users.${config.geko.usuario.nome}.extraGroups = [ "docker" ];
 
   # Utilitários do Docker
   environment.systemPackages = with pkgs; [

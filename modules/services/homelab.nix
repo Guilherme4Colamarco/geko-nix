@@ -62,7 +62,7 @@ in {
         PermitRootLogin = "no";
       };
     };
-    users.users.geko.openssh.authorizedKeys.keys = cfg.ssh.authorizedKeys;
+    users.users.${config.geko.usuario.nome}.openssh.authorizedKeys.keys = cfg.ssh.authorizedKeys;
 
     networking.firewall = if cfg.tailscale.trustInterface
       then { trustedInterfaces = [ "tailscale0" ]; }
