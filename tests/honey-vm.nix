@@ -22,6 +22,7 @@ in pkgs.testers.runNixOSTest {
       ++ lib.optional (compositor == "pleamar") inputs.pleamar-wm.nixosModules.default;
     virtualisation = { graphics = true; qemu.options = [ "-vga none -device virtio-gpu-pci" "-display none" ]; memorySize = 4096; cores = 4; resolution = { x = 1920; y = 1080; }; };
     hardware.graphics.enable = true;
+    hardware.i2c.enable = true; # antes vinha do honey-common; em produção vem do configuration.nix
     environment.systemPackages = [ inputs.pleamar-wm.inputs.pleamar.packages.${pkgs.stdenv.hostPlatform.system}.pleamar pkgs.wayland-utils pkgs.jq pkgs.libnotify pkgs.wl-clipboard pkgs.procps pkgs.kitty ];
     services.pipewire = { enable = true; pulse.enable = true; };
     security.rtkit.enable = true;
@@ -32,7 +33,7 @@ in pkgs.testers.runNixOSTest {
         default_session = { user = "geko"; command = "${pkgs.coreutils}/bin/sleep infinity"; };
       };
     };
-    users.users.geko = { isNormalUser = true; uid = 1000; password = "honeytest"; extraGroups = [ "video" "input" ]; };
+    users.users.geko = { isNormalUser = true; uid = 1000; password = "honeytest"; extraGroups = [ "video" "input" "i2c" ]; };
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;

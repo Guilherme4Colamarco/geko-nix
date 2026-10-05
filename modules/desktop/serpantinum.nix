@@ -2,6 +2,7 @@
   cfg = config.geko.desktop;
   command = value: builtins.toJSON value;
 in {
+  imports = [ ./comum.nix ];
   programs.serpantinum.enable = true;
   programs.hyprland = {
     enable = true;
@@ -9,9 +10,6 @@ in {
     portalPackage = desktopPkgs.xdg-desktop-portal-hyprland;
   };
   services.displayManager.defaultSession = "hyprland";
-  services.upower.enable = true;
-  services.gnome.gnome-keyring.enable = true;
-  security.polkit.enable = true;
   environment.systemPackages = [ pkgs.adwaita-icon-theme pkgs.playerctl ] ++ lib.optionals cfg.clipboard.enable [ pkgs.wl-clipboard pkgs.cliphist ];
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
