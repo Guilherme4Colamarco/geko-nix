@@ -22,7 +22,7 @@ in {
       clipboard.history = lib.mkDefault "history.json";
       power.lock_command = lib.mkDefault [ "honeyctl" "lock" ];
     };
-    home.packages = [ honey pkgs.kitty pkgs.nautilus pkgs.adwaita-icon-theme pkgs.playerctl ];
+    home.packages = [ honey pkgs.kitty pkgs.nautilus pkgs.playerctl ];
     home.pointerCursor = { package = pkgs.adwaita-icon-theme; name = "Adwaita"; size = 35; gtk.enable = true; };
     # Fonte de UI dos apps GTK 2/3/4 (settings.ini) e do dconf
     # org.gnome.desktop.interface font-name, que libadwaita lê pelo portal.

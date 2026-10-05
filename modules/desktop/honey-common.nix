@@ -10,7 +10,7 @@ in {
   security.pam.services.swaylock = {};
   hardware.i2c.enable = true;
   users.users.geko.extraGroups = [ "i2c" ];
-  environment.systemPackages = [ pkgs.ddcutil pkgs.adwaita-icon-theme ];
+  environment.systemPackages = [ pkgs.adwaita-icon-theme ];
 
   # Par tipográfico dos perfis Honey: Nunito no texto de UI, Fredoka nos títulos.
   # Use pkgs.nunito, não "Nunito" no google-fonts: aquele também instala um

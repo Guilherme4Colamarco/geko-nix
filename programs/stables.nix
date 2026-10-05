@@ -19,7 +19,6 @@
     agent-browser
     # Keep Ryoku/Hyprland's GNOME file-manager and keyring dependencies
     # available even when Pantheon is disabled.
-    nautilus
     gnome-keyring
     pkgs.solaar
     pkgs.browsers
