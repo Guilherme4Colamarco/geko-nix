@@ -1,3 +1,4 @@
+# Ferramentas de desenvolvimento (gh, nodejs, python, compiladores). git, fd e jq vêm de modules/core.
 { pkgs, ... }:
 
 {

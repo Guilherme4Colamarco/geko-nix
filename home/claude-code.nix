@@ -1,3 +1,4 @@
+# Home Manager: instala as skills do Claude Code (ECC e pstack) em ~/.claude/skills.
 { inputs, lib, ... }:
 let
   eccSkills = lib.filterAttrs (_: kind: kind == "directory")

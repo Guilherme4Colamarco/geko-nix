@@ -1,3 +1,5 @@
+# Home Manager: módulo programs.honeyShell (shell Honey), serviços de usuário, tema GTK,
+# cursor e swaylock. Usado pelos perfis pleamar, niri e hyprland.
 { config, lib, pkgs, inputs, ... }:
 let
   cfg = config.programs.honeyShell;

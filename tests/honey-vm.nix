@@ -1,3 +1,5 @@
+# Teste em VM (checks do flake): sobe um perfil Honey e confere launcher, painéis, clipboard e lock.
+# Rode com: nix build .#checks.x86_64-linux.honey-<perfil>
 { pkgs, inputs, desktopPkgs, unstablePkgs, compositor, requireCapture ? true }:
 let
   perfil = { pleamar = "pleamar"; niri = "niri-honey"; hyprland = "hyprland-honey"; }.${compositor};

@@ -1,3 +1,5 @@
+# Programas do canal nixos-unstable e de flakes externos (Brave, Codex, Claude Code, Obsidian, etc.).
+# Também dá ao usuário os grupos/módulos de kernel que o Claude Desktop precisa (KVM).
 { config, inputs, unstablePkgs, ... }:
 
 {

@@ -1,3 +1,5 @@
+# Base dos perfis Honey (pleamar, niri, hyprland): fontes Nunito/Fredoka, PAM do swaylock,
+# dconf e ícones. Importada por cada perfil em desktops/.
 { pkgs, ... }:
 let
   # Fredoka só existe dentro do google-fonts; o override copia apenas

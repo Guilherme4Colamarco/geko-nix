@@ -1,3 +1,4 @@
+# Home Manager do usuário (comum a todos os perfis): nome, pasta pessoal, Fish e AstroNvim.
 { inputs, pkgs, osConfig, ... }: {
   imports = [ ./fish.nix ./claude-code.nix ];
   home.username = osConfig.geko.usuario.nome;

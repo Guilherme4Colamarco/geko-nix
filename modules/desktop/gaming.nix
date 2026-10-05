@@ -1,3 +1,5 @@
+# Jogos: opções mySystem.gaming.* (launchers, Minecraft, ferramentas, controles)
+# e os Protons com versão e hash fixos.
 { config, lib, pkgs, unstablePkgs, ... }:
 
 let

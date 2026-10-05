@@ -1,3 +1,5 @@
+# Pacote do shell Honey (código em ./source): valida a config e a UI no build
+# e cria os comandos honeyctl e honey-shell.
 { lib, stdenvNoCC, makeWrapper, python3, pleamar, cava, wl-clipboard, xdg-utils, ddcutil,
   wireplumber, playerctl, brightnessctl, swaylock, swaybg, grim, slurp, procps, systemd, dbus,
   bash, librsvg, util-linux, settings ? {} }:

@@ -1,3 +1,5 @@
+# Perfil Serpantinum (alvos `nixos` e `serpantinum`): Hyprland + shell Serpantinum.
+# A parte do usuário (Home Manager) está no bloco home-manager.users, mais abaixo.
 { config, lib, pkgs, desktopPkgs, inputs, ... }: let
   cfg = config.geko.desktop;
   command = value: builtins.toJSON value;

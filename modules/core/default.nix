@@ -1,3 +1,5 @@
+# Núcleo comum a todos os perfis: Fish, ferramentas de linha de comando, autoUpgrade,
+# nh (limpeza e rebuild) e navegador padrão.
 { config, pkgs, desktopProfile ? "nixos", ... }:
 let
   usuario = config.geko.usuario.nome;

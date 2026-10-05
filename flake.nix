@@ -1,3 +1,5 @@
+# Ponto de entrada. Declara as entradas (inputs), monta o sistema de cada perfil
+# (nixos, serpantinum, pleamar, niri, hyprland) e os testes de VM do Honey (checks).
 {
   description = "NixOS do geko com desktop modular Serpantinum";
   inputs = {
