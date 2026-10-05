@@ -11,7 +11,7 @@ scene PreviewBackground {
         zone box probe { from: 60, 450; size: 120, 120 }
         on press probe { emit background_probe }
         event background_probe ->
-        text "HONEY / PLEAMAR" { family: "DejaVu Sans"; at: backdrop.width * .5, backdrop.height * .78; anchor: center; size: 30; weight: 500; color: #e3d5b2; opacity: .5 }
-        text "Sessão de teste isolada" { family: "DejaVu Sans"; at: backdrop.width * .5, backdrop.height * .82; anchor: center; size: 14; color: #e3d5b2; opacity: .4 }
+        text "HONEY / PLEAMAR" { family: "Fredoka"; at: backdrop.width * .5, backdrop.height * .78; anchor: center; size: 30; weight: 600; color: #e3d5b2; opacity: .5 }
+        text "Sessão de teste isolada" { family: "Nunito"; at: backdrop.width * .5, backdrop.height * .82; anchor: center; size: 15; weight: 600; color: #e3d5b2; opacity: .4 }
     }
 }

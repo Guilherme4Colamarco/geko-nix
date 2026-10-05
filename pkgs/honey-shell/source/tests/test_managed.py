@@ -54,6 +54,14 @@ class ManagedTests(unittest.TestCase):
         c=copy.deepcopy(self.c);c['mode']='demo'
         with patch('services.bridge.subprocess.run',side_effect=AssertionError('hardware')):
             self.assertTrue(action('brightness',.8,c,Store())['ok'])
+    def test_failed_ddc_detect_does_not_rescan_immediately(self):
+        import services.bridge as bridge
+        bridge._ddc_bus=None;bridge._ddc_retry_at=0
+        fail=Mock(returncode=1,stdout='',stderr='')
+        with patch('services.bridge.shutil.which',return_value='ddcutil'),patch('services.bridge.subprocess.run',return_value=fail) as run:
+            self.assertFalse(bridge.ddc_read()['available'])
+            self.assertFalse(bridge.ddc_read()['available'])
+        self.assertEqual(run.call_count,1)
     def test_suspend_locks_before_power(self):
         with patch('cli.lock') as lock,patch('cli.run') as run:
             calls=Mock();calls.attach_mock(lock,'lock');calls.attach_mock(run,'run')

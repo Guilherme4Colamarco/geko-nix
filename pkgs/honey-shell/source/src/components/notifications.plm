@@ -1,0 +1,90 @@
+library NotificationLibrary {
+    // Toasts: up to three drops that hang from the central body (they are shapes of
+    // the one melting body in HoneyTop; this only draws what is inside them).
+    component NoteToasts {
+    group { show: noteon
+        group { opacity: clamp((nt0 - 0.55) / 0.45, 0, 1); show: nt0 > 0.3
+            box { from: toastx, (toasty + 0 * (toasth + toastg)); size: toastw, toasth * nt0; corner: roundness * 0.55; stroke: 2; color: orange; opacity: 0.35 + 0.35 * sin(time * 160); show: nlv0 == 2 }
+            image notes.0.icon { at: toastx + 14, (toasty + 0 * (toasth + toastg)) + 14; size: 28, 28 }
+            text notes.0.app { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 0 * (toasth + toastg)) + 20; size: 12; weight: 600; color: gold; width: toastw - 110; lines: 1 }
+            text notes.0.age { family: "Nunito"; anchor: right center; at: toastx + toastw - 38, (toasty + 0 * (toasth + toastg)) + 20; size: 11; weight: 600; color: ink; opacity: 0.7 }
+            text notes.0.title { family: "Fredoka"; anchor: left center; at: toastx + 52, (toasty + 0 * (toasth + toastg)) + 40; size: 15; weight: 600; color: ink; width: toastw - 70; lines: 1 }
+            text notes.0.body { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 0 * (toasth + toastg)) + 59; size: 12; weight: 600; color: ink; opacity: 0.9; width: toastw - 70; lines: 1 }
+            Gob(toastx + toastw - 110, (toasty + 0 * (toasth + toastg)) + toasth - 4, 98, 22, toast_act0.hover, 1, 0 + 70) { show: notes.0.hasact }
+            text notes.0.actlabel { family: "Nunito"; anchor: center; at: toastx + toastw - 61, (toasty + 0 * (toasth + toastg)) + toasth + 7; size: 11; weight: 700; color: darkink; width: 90; lines: 1; show: notes.0.hasact }
+            zone box toast0 { from: toastx, (toasty + 0 * (toasth + toastg)); size: toastw, toasth; cursor: pointer; active: nt0 > 0.6 }
+            on press toast0 { emit note_open(0) }
+            zone box toast_x0 { from: toastx + toastw - 34, (toasty + 0 * (toasth + toastg)) + 8; size: 26, 24; cursor: pointer; active: nt0 > 0.6 }
+            text "×" { family: "Nunito"; anchor: center; at: toastx + toastw - 21, (toasty + 0 * (toasth + toastg)) + 19; size: 18; weight: 700; color: ink; opacity: 0.5 + toast_x0.hover * 0.5 }
+            on press toast_x0 { emit note_close(0) }
+            zone box toast_act0 { from: toastx + toastw - 110, (toasty + 0 * (toasth + toastg)) + toasth - 4; size: 98, 22; cursor: pointer; active: nt0 > 0.6 and notes.0.hasact }
+            on press toast_act0 { emit note_act(0) }
+        }
+        group { opacity: clamp((nt1 - 0.55) / 0.45, 0, 1); show: nt1 > 0.3
+            box { from: toastx, (toasty + 1 * (toasth + toastg)); size: toastw, toasth * nt1; corner: roundness * 0.55; stroke: 2; color: orange; opacity: 0.35 + 0.35 * sin(time * 160); show: nlv1 == 2 }
+            image notes.1.icon { at: toastx + 14, (toasty + 1 * (toasth + toastg)) + 14; size: 28, 28 }
+            text notes.1.app { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 1 * (toasth + toastg)) + 20; size: 12; weight: 600; color: gold; width: toastw - 110; lines: 1 }
+            text notes.1.age { family: "Nunito"; anchor: right center; at: toastx + toastw - 38, (toasty + 1 * (toasth + toastg)) + 20; size: 11; weight: 600; color: ink; opacity: 0.7 }
+            text notes.1.title { family: "Fredoka"; anchor: left center; at: toastx + 52, (toasty + 1 * (toasth + toastg)) + 40; size: 15; weight: 600; color: ink; width: toastw - 70; lines: 1 }
+            text notes.1.body { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 1 * (toasth + toastg)) + 59; size: 12; weight: 600; color: ink; opacity: 0.9; width: toastw - 70; lines: 1 }
+            Gob(toastx + toastw - 110, (toasty + 1 * (toasth + toastg)) + toasth - 4, 98, 22, toast_act1.hover, 1, 1 + 70) { show: notes.1.hasact }
+            text notes.1.actlabel { family: "Nunito"; anchor: center; at: toastx + toastw - 61, (toasty + 1 * (toasth + toastg)) + toasth + 7; size: 11; weight: 700; color: darkink; width: 90; lines: 1; show: notes.1.hasact }
+            zone box toast1 { from: toastx, (toasty + 1 * (toasth + toastg)); size: toastw, toasth; cursor: pointer; active: nt1 > 0.6 }
+            on press toast1 { emit note_open(1) }
+            zone box toast_x1 { from: toastx + toastw - 34, (toasty + 1 * (toasth + toastg)) + 8; size: 26, 24; cursor: pointer; active: nt1 > 0.6 }
+            text "×" { family: "Nunito"; anchor: center; at: toastx + toastw - 21, (toasty + 1 * (toasth + toastg)) + 19; size: 18; weight: 700; color: ink; opacity: 0.5 + toast_x1.hover * 0.5 }
+            on press toast_x1 { emit note_close(1) }
+            zone box toast_act1 { from: toastx + toastw - 110, (toasty + 1 * (toasth + toastg)) + toasth - 4; size: 98, 22; cursor: pointer; active: nt1 > 0.6 and notes.1.hasact }
+            on press toast_act1 { emit note_act(1) }
+        }
+        group { opacity: clamp((nt2 - 0.55) / 0.45, 0, 1); show: nt2 > 0.3
+            box { from: toastx, (toasty + 2 * (toasth + toastg)); size: toastw, toasth * nt2; corner: roundness * 0.55; stroke: 2; color: orange; opacity: 0.35 + 0.35 * sin(time * 160); show: nlv2 == 2 }
+            image notes.2.icon { at: toastx + 14, (toasty + 2 * (toasth + toastg)) + 14; size: 28, 28 }
+            text notes.2.app { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 2 * (toasth + toastg)) + 20; size: 12; weight: 600; color: gold; width: toastw - 110; lines: 1 }
+            text notes.2.age { family: "Nunito"; anchor: right center; at: toastx + toastw - 38, (toasty + 2 * (toasth + toastg)) + 20; size: 11; weight: 600; color: ink; opacity: 0.7 }
+            text notes.2.title { family: "Fredoka"; anchor: left center; at: toastx + 52, (toasty + 2 * (toasth + toastg)) + 40; size: 15; weight: 600; color: ink; width: toastw - 70; lines: 1 }
+            text notes.2.body { family: "Nunito"; anchor: left center; at: toastx + 52, (toasty + 2 * (toasth + toastg)) + 59; size: 12; weight: 600; color: ink; opacity: 0.9; width: toastw - 70; lines: 1 }
+            Gob(toastx + toastw - 110, (toasty + 2 * (toasth + toastg)) + toasth - 4, 98, 22, toast_act2.hover, 1, 2 + 70) { show: notes.2.hasact }
+            text notes.2.actlabel { family: "Nunito"; anchor: center; at: toastx + toastw - 61, (toasty + 2 * (toasth + toastg)) + toasth + 7; size: 11; weight: 700; color: darkink; width: 90; lines: 1; show: notes.2.hasact }
+            zone box toast2 { from: toastx, (toasty + 2 * (toasth + toastg)); size: toastw, toasth; cursor: pointer; active: nt2 > 0.6 }
+            on press toast2 { emit note_open(2) }
+            zone box toast_x2 { from: toastx + toastw - 34, (toasty + 2 * (toasth + toastg)) + 8; size: 26, 24; cursor: pointer; active: nt2 > 0.6 }
+            text "×" { family: "Nunito"; anchor: center; at: toastx + toastw - 21, (toasty + 2 * (toasth + toastg)) + 19; size: 18; weight: 700; color: ink; opacity: 0.5 + toast_x2.hover * 0.5 }
+            on press toast_x2 { emit note_close(2) }
+            zone box toast_act2 { from: toastx + toastw - 110, (toasty + 2 * (toasth + toastg)) + toasth - 4; size: 98, 22; cursor: pointer; active: nt2 > 0.6 and notes.2.hasact }
+            on press toast_act2 { emit note_act(2) }
+        }
+    // Unread badge: a small drop stuck to the central body with the count.
+        text "{min(unread, 9)}" { family: "Fredoka"; anchor: center; at: badgex, badgey; size: 11; weight: 600; color: darkink; show: unread > 0 }
+    }
+    }
+    // Notification centre (panel 7): the central drop opens into the latest eight.
+    component NotePanel {
+        group { opacity: clamp((notep - 0.6) / 0.4, 0, 1); show: noteon
+            zone box note_inside { from: centralx, 0; size: centralw, centralh; active: panel == 7 }
+            text "Notificações" { family: "Fredoka"; anchor: left center; at: cx - notew * 0.5 + 30, 50; size: 22; weight: 600; color: ink }
+            text noteinfo { family: "Nunito"; anchor: right center; at: cx + notew * 0.5 - 30, 52; size: 12; weight: 600; color: ink; opacity: 0.8 }
+            text "Nada por aqui. O mel está calmo." { family: "Nunito"; anchor: center; at: cx, 160; size: 14; weight: 600; color: ink; opacity: 0.7; show: notes_hist.count == 0 }
+            for h in notes_hist {
+                Gob(cx - notew * 0.5 + 24, 78 + h.index * 29, notew - 48, 26, note_row_hit.hover * 0.4, if(h.level == 2, 1, 0), h.index + 80)
+                zone box note_row_hit { from: cx - notew * 0.5 + 24, 78 + h.index * 29; size: notew - 100, 26; cursor: pointer }
+                image h.icon { at: cx - notew * 0.5 + 32, 82 + h.index * 29; size: 18, 18 }
+                text h.title { family: "Fredoka"; anchor: left center; at: cx - notew * 0.5 + 58, 91 + h.index * 29; size: 12; weight: 600; color: if(h.level == 2, darkink, ink); width: 150; lines: 1 }
+                text h.body { family: "Nunito"; anchor: left center; at: cx - notew * 0.5 + 214, 91 + h.index * 29; size: 11; weight: 600; color: if(h.level == 2, darkink, ink); opacity: 0.85; width: notew - 330; lines: 1 }
+                text h.age { family: "Nunito"; anchor: right center; at: cx + notew * 0.5 - 62, 91 + h.index * 29; size: 11; weight: 600; color: if(h.level == 2, darkink, ink); opacity: 0.7 }
+                zone box note_row_x { from: cx + notew * 0.5 - 56, 80 + h.index * 29; size: 28, 22; cursor: pointer }
+                text "×" { family: "Nunito"; anchor: center; at: cx + notew * 0.5 - 42, 90 + h.index * 29; size: 16; weight: 700; color: if(h.level == 2, darkink, ink); opacity: 0.5 + note_row_x.hover * 0.5 }
+                on press note_row_hit { emit note_open(100 + h.index) }
+                on press note_row_x { emit note_close(100 + h.index) }
+            }
+            Gob(cx - notew * 0.5 + 24, noteh - 78, 132, 28, note_clear_hit.hover, 0, 90)
+            text "Limpar tudo" { family: "Nunito"; anchor: center; at: cx - notew * 0.5 + 90, noteh - 64; size: 12; weight: 700; color: ink }
+            zone box note_clear_hit { from: cx - notew * 0.5 + 24, noteh - 78; size: 132, 28; cursor: pointer; active: notes_hist.count > 0 }
+            on press note_clear_hit { emit note_clear }
+            Gob(cx + notew * 0.5 - 176, noteh - 78, 152, 28, note_dnd_hit.hover, if(dnd, 1, 0), 91)
+            text "Não perturbe" { family: "Nunito"; anchor: center; at: cx + notew * 0.5 - 100, noteh - 64; size: 12; weight: 700; color: if(dnd, darkink, ink) }
+            zone box note_dnd_hit { from: cx + notew * 0.5 - 176, noteh - 78; size: 152, 28; cursor: pointer }
+            on press note_dnd_hit { emit dnd(2) }
+        }
+    }
+}

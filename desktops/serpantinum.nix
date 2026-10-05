@@ -1,7 +1,10 @@
+# Perfil Serpantinum (alvos `nixos` e `serpantinum`): Hyprland + shell Serpantinum.
+# A parte do usuário (Home Manager) está no bloco home-manager.users, mais abaixo.
 { config, lib, pkgs, desktopPkgs, inputs, ... }: let
   cfg = config.geko.desktop;
   command = value: builtins.toJSON value;
 in {
+  imports = [ inputs.serpantinum.nixosModules.default ./_comum.nix ];
   programs.serpantinum.enable = true;
   programs.hyprland = {
     enable = true;
@@ -9,13 +12,10 @@ in {
     portalPackage = desktopPkgs.xdg-desktop-portal-hyprland;
   };
   services.displayManager.defaultSession = "hyprland";
-  services.upower.enable = true;
-  services.gnome.gnome-keyring.enable = true;
-  security.polkit.enable = true;
   environment.systemPackages = [ pkgs.adwaita-icon-theme pkgs.playerctl ] ++ lib.optionals cfg.clipboard.enable [ pkgs.wl-clipboard pkgs.cliphist ];
   xdg.portal.extraPortals = [ pkgs.xdg-desktop-portal-gtk ];
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
-  home-manager.users.geko = {
+  home-manager.users.${config.geko.usuario.nome} = {
     imports = [ inputs.serpantinum.homeManagerModules.default ];
     programs.serpantinum = {
       enable = true;
@@ -25,7 +25,7 @@ in {
     systemd.user.targets.hyprland-session = {
       Unit = { Description = "Sessão Hyprland do geko"; BindsTo = [ "graphical-session.target" ]; Wants = [ "graphical-session-pre.target" ]; After = [ "graphical-session-pre.target" ]; };
     };
-    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../../config/hyprland/serpantinum.lua + ''
+    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../config/hyprland/serpantinum.lua + ''
       execbind("SUPER + RETURN", ${command (lib.getExe cfg.terminal)})
       execbind("SUPER + E", ${command (lib.getExe cfg.fileManager)})
       hl.on("hyprland.start", function()

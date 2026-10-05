@@ -3,29 +3,43 @@ library TrayPanelLibrary {
     group { opacity: 1; show: trayon
     prop hot = 0 ~quick
     follow hot = if(tray_hit.hover, 1, 0)
+    on change hot { trayhot = hot }
 
-        Honey(trayx, mix(if(compact, 90, 175), 280, tray), 38 + tray * 370, (tray * 0.4 + hot * 0.15) * deform)
-        zone box tray_hit { from: trayx, 0; size: if(compact, 90, 175), 38; cursor: pointer }
+        zone box tray_body { from: trpx, 0; size: trpw, trph; active: panel == 3 }
+        zone box tray_hit { from: trayx, 0; size: if(compact, 90, 150), 38; cursor: pointer; active: panel != 3 }
         on press tray_hit { emit request(3) }
         figure wifi { at: trayx + 27, 22; size: 22, 22; color: ink; opacity: if(wifion, 1, .4) }
         figure bluetooth { at: trayx + 61, 22; size: 20, 20; color: ink; opacity: if(bton, 1, .4) }
+        zone box wifi_hit { from: trayx + 16, 11; size: 22, 22; cursor: pointer }
+        on press wifi_hit { emit tray_wifi }
+        zone box bt_hit { from: trayx + 51, 12; size: 20, 20; cursor: pointer }
+        on press bt_hit { emit tray_bt }
         for t in traymini {
             image t.icon { at: trayx + 87 + t.index * 28, 11; size: 22, 22; show: not compact and t.index < 2 }
+            zone box mini { from: trayx + 87 + t.index * 28, 11; size: 22, 22; cursor: pointer; show: not compact and t.index < 2 }
+            on press mini { emit tray_action(t.index) }
+            on press right mini { emit tray_context(t.index) }
+            on press middle mini { emit tray_secondary(t.index) }
         }
         group { opacity: clamp((tray - 0.6) / 0.4, 0, 1)
             zone box tray_inside { from: trayx, 38; size: 280, 365 }
-            text traytitle { family: "DejaVu Sans"; anchor: left center; at: trayx + 20, 77; size: 21; color: ink }
+            text traytitle { family: "Fredoka"; anchor: left center; at: trayx + 20, 77; size: 22; weight: 600; color: ink }
+            zone box tray_back_hit { from: trayx + 16, 64; size: 248, 28; cursor: pointer }
+            on press tray_back_hit { emit tray_back }
             for t in icons {
-                box item.$t.index { from: trayx + 16, 100 + t.index * 37; size: 248, 32; corner: 12; color: gold; opacity: 0.16; cursor: pointer }
+                Gob(trayx + 16, 100 + t.index * 37, 248, 32, item.hover, 0, t.index)
+                zone box item { from: trayx + 16, 100 + t.index * 37; size: 248, 32; cursor: pointer }
                 image t.icon { at: trayx + 23, 104 + t.index * 37; size: 22, 22 }
-                text t.name { family: "DejaVu Sans"; anchor: left center; at: trayx + 56, 122 + t.index * 37; size: 13; color: ink; width: 195; lines: 1 }
-                on press item.$t.index { emit tray_action(t.index) }
-                on press right item.$t.index { emit tray_context(t.index) }
+                text t.name { family: "Nunito"; anchor: left center; at: trayx + 56, 122 + t.index * 37; size: 14; weight: 600; color: ink; width: 195; lines: 1 }
+                on press item { emit tray_action(t.index) }
+                on press right item { emit tray_context(t.index) }
+                on press middle item { emit tray_secondary(t.index) }
             }
             for m in traymenu {
-                box menu.$m.index { from: trayx + 16, 105 + m.index * 32; size: 248, 28; corner: 10; color: gold; opacity: 0.15; cursor: pointer; active: m.enabled }
-                text m.name { family: "DejaVu Sans"; anchor: left center; at: trayx + 30, 123 + m.index * 32; size: 12; color: ink; opacity: if(m.enabled, 1, 0.4); width: 222; lines: 1 }
-                on press menu.$m.index { emit tray_click(m.index) }
+                Gob(trayx + 16, 105 + m.index * 32, 248, 28, if(m.enabled, menu.hover, 0), 0, m.index + 7)
+                zone box menu { from: trayx + 16, 105 + m.index * 32; size: 248, 28; cursor: pointer; active: m.enabled }
+                text m.name { family: "Nunito"; anchor: left center; at: trayx + 30, 123 + m.index * 32; size: 13; weight: 600; color: ink; opacity: if(m.enabled, 1, 0.4); width: 222; lines: 1 }
+                on press menu { emit tray_click(m.index) }
             }
         }
     }

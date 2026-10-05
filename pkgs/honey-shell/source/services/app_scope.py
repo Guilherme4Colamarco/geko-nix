@@ -6,6 +6,7 @@ adapter redirects that exact invocation into a transient user service.
 """
 import os
 from pathlib import Path
+import shutil
 import sys
 
 ENVIRONMENT = ("DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
@@ -13,17 +14,24 @@ ENVIRONMENT = ("DISPLAY", "WAYLAND_DISPLAY", "XDG_RUNTIME_DIR",
                "XDG_DATA_DIRS", "PATH")
 
 
-def launch_argv(args):
-    if len(args) != 4 or args[:3] != ["-f", "sh", "-c"]:
-        return [os.environ["HONEY_REAL_SETSID"], *args]
-    argv = [os.environ["HONEY_SYSTEMD_RUN"], "--user", "--collect", "--quiet",
+def service_argv(command):
+    runner = os.environ.get("HONEY_SYSTEMD_RUN") or shutil.which("systemd-run")
+    if not runner:
+        raise FileNotFoundError("systemd-run indisponível")
+    argv = [runner, "--user", "--collect", "--quiet",
             "--expand-environment=no",
             "--service-type=exec", "--property=PartOf=graphical-session.target",
             "--working-directory=" + str(Path.home())]
     for key in ENVIRONMENT:
         if key in os.environ:
             argv.append("--setenv=" + key + "=" + os.environ[key])
-    return [*argv, "--", os.environ["HONEY_SHELL"], "-c", args[3]]
+    return [*argv, "--", *command]
+
+
+def launch_argv(args):
+    if len(args) != 4 or args[:3] != ["-f", "sh", "-c"]:
+        return [os.environ["HONEY_REAL_SETSID"], *args]
+    return service_argv([os.environ["HONEY_SHELL"], "-c", args[3]])
 
 
 if __name__ == "__main__":

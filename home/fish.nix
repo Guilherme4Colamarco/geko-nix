@@ -1,3 +1,4 @@
+# Home Manager: Fish (config, plugins, funções mkcd e y) e prompt Starship.
 { pkgs, ... }: {
   programs.fish = {
     enable = true;

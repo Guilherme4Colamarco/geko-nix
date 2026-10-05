@@ -1,5 +1,8 @@
+# Teste em VM (checks do flake): sobe um perfil Honey e confere launcher, painéis, clipboard e lock.
+# Rode com: nix build .#checks.x86_64-linux.honey-<perfil>
 { pkgs, inputs, desktopPkgs, unstablePkgs, compositor, requireCapture ? true }:
 let
+  perfil = { pleamar = "pleamar"; niri = "niri-honey"; hyprland = "hyprland-honey"; }.${compositor};
   niriTestSession = pkgs.writeShellScript "honey-niri-vm-session" ''
     mkdir -p "$HOME/.local/state"
     ${pkgs.weston}/bin/weston --backend=drm --renderer=pixman --socket=honey-test-parent --idle-time=0 > "$HOME/.local/state/honey-test-weston.log" 2>&1 &
@@ -18,10 +21,10 @@ in pkgs.testers.runNixOSTest {
   name = "honey-${compositor}";
   node.specialArgs = { inherit inputs desktopPkgs unstablePkgs; };
   nodes.machine = { config, lib, pkgs, ... }: {
-    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/desktop/${compositor}.nix ]
-      ++ lib.optional (compositor == "pleamar") inputs.pleamar-wm.nixosModules.default;
+    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../desktops/${perfil}.nix ];
     virtualisation = { graphics = true; qemu.options = [ "-vga none -device virtio-gpu-pci" "-display none" ]; memorySize = 4096; cores = 4; resolution = { x = 1920; y = 1080; }; };
     hardware.graphics.enable = true;
+    hardware.i2c.enable = true; # antes vinha do honey-common; em produção vem do configuration.nix
     environment.systemPackages = [ inputs.pleamar-wm.inputs.pleamar.packages.${pkgs.stdenv.hostPlatform.system}.pleamar pkgs.wayland-utils pkgs.jq pkgs.libnotify pkgs.wl-clipboard pkgs.procps pkgs.kitty ];
     services.pipewire = { enable = true; pulse.enable = true; };
     security.rtkit.enable = true;
@@ -32,7 +35,7 @@ in pkgs.testers.runNixOSTest {
         default_session = { user = "geko"; command = "${pkgs.coreutils}/bin/sleep infinity"; };
       };
     };
-    users.users.geko = { isNormalUser = true; uid = 1000; password = "honeytest"; extraGroups = [ "video" "input" ]; };
+    users.users.geko = { isNormalUser = true; uid = 1000; password = "honeytest"; extraGroups = [ "video" "input" "i2c" ]; };
     home-manager = {
       useGlobalPkgs = true;
       useUserPackages = true;
@@ -80,8 +83,10 @@ in pkgs.testers.runNixOSTest {
     machine.succeed(user("systemctl --user restart honey-shell.service"))
     machine.wait_until_succeeds(user("pleamar --say honey 'get panel'"))
     machine.succeed(user("systemctl --user show honey-shell -p MainPID --value | xargs -r kill -0"))
-    machine.succeed(user("systemctl --user is-active honey-wallpaper.service honey-notifications.service honey-polkit.service honey-reserve.service"))
+    machine.succeed(user("systemctl --user is-active honey-wallpaper.service honey-polkit.service honey-reserve.service"))
+    machine.wait_until_succeeds(user("pleamar --say honey 'get noteon' | grep -q true"))
     machine.succeed(user("notify-send Honey 'Teste isolado'"))
+    machine.wait_until_succeeds(user("pleamar --say honey 'get notecount' | grep -q 1"))
     time.sleep(1)
     machine.screenshot("${compositor}-idle")
     machine.succeed(user("systemd-run --user --unit honey-test-app --collect kitty"))

@@ -1,24 +1,37 @@
-{ pkgs, ... }: {
+# Núcleo comum a todos os perfis: Fish, ferramentas de linha de comando, autoUpgrade,
+# nh (limpeza e rebuild) e navegador padrão.
+{ config, pkgs, desktopProfile ? "nixos", ... }:
+let
+  usuario = config.geko.usuario.nome;
+in {
   programs.fish.enable = true;
-  users.users.geko.shell = pkgs.fish;
+  users.users.${usuario}.shell = pkgs.fish;
   programs.nix-ld.enable = true;
   environment.systemPackages = with pkgs; [
     ntfs3g exfatprogs dosfstools rsync gparted git micro zoxide tree
     bat eza starship fzf atuin direnv yazi age trashy btop fd wget curl jq socat
-    tailscale wakeonlan
   ];
-  services.openssh = {
-    enable = true;
-    settings = { PasswordAuthentication = false; KbdInteractiveAuthentication = false; PermitRootLogin = "no"; };
-  };
-  services.tailscale.enable = true;
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
   boot.loader.systemd-boot.configurationLimit = 10;
   nix.settings.auto-optimise-store = true;
-  system.autoUpgrade.enable = false;
+  system.autoUpgrade = {
+    enable = true;
+    flake = "/home/${usuario}/Documentos/geko-nix#${desktopProfile}";
+    operation = "boot";
+    allowReboot = false;
+    dates = "04:40";
+    randomizedDelaySec = "20min";
+    persistent = true;
+    upgrade = false;
+    flags = [
+      "--update-input" "nixpkgs"
+      "--update-input" "nixpkgs-unstable"
+      "--update-input" "home-manager"
+      "--update-input" "claude-desktop-app"
+    ];
+  };
   programs.nh = {
     enable = true;
-    flake = "/home/geko/Documentos/geko-nix";
+    flake = "/home/${usuario}/Documentos/geko-nix";
     clean = { enable = true; extraArgs = "--keep 10 --keep-since 14d"; };
   };
   xdg.mime.defaultApplications = {

@@ -11,7 +11,8 @@ Exemplo de preferências declarativas:
 ```nix
 programs.honeyShell.settings = {
   motion.reduced = true;
-  modules.cava = false;
+  modules.cava = false;  # o shell para de dançar com a música
+  motion.groove = 0.5;    # intensidade da dança (0 a 1)
   appearance.base = "#b97912";
   files.roots = [ "~/Documentos" "~/Downloads" "~/Imagens" ];
 };
@@ -43,11 +44,35 @@ No Pleamar-wm, Super+Tab abre overview e Super+Ctrl+F alterna o monitor livre. N
 
 ## Sessão
 
-`honeyctl session` importa o ambiente gráfico, inicia `honey-session.target` uma única vez e observa a vida do socket Wayland. Quando o compositor termina, encerra o target e seus serviços. Honey, reserva superior, wallpaper, Mako, polkit e o hook de bloqueio antes de suspender pertencem ao target. O helper Honey observa clipboard e Cava; seus filhos pertencem ao grupo do serviço.
+`honeyctl session` importa o ambiente gráfico, inicia `honey-session.target` uma única vez e observa a vida do socket Wayland. Quando o compositor termina, encerra o target e seus serviços. Honey, reserva superior, wallpaper, polkit e o hook de bloqueio antes de suspender pertencem ao target. O helper Honey observa clipboard e Cava; seus filhos pertencem ao grupo do serviço.
 
 Não há timers de idle. Suspensão pelo painel exige bloqueio bem sucedido primeiro. Reboot e shutdown exigem confirmação dentro do painel. Swaylock usa PAM do NixOS; o Honey não implementa autenticação própria.
 
 O catálogo e a validação de aplicativos continuam no serviço oficial `apps.launch`. O pacote intercepta sua chamada `setsid -f sh -c` e inicia o aplicativo em um serviço transitório separado pelo systemd. `setsid` sozinho não sai do grupo de processos do serviço: reiniciar Honey encerrava auxiliares de aplicativos Electron, incluindo o GPT. Agora aplicativos pertencem à sessão gráfica, e reiniciar o shell só encerra seus próprios helpers. Outras chamadas de `setsid` usam o binário original.
+
+## Notch
+
+A barra é um notch central: volume, relógio e tray (com o power fundido na ponta) formam um único corpo de mel no meio da tela. Cada parte é ancorada à gota central, então, quando um painel abre, as vizinhas são empurradas para o lado em vez de sobrepostas. Os controles escorrem da gota de volume, o tray e o power da gota da direita, e o launcher, os wallpapers e as notificações do relógio.
+
+Não há mais painel de cava. O `bridge.py` continua lendo o cava (30 quadros por segundo) e o Luau calcula `fact.beat` com os graves (três primeiras bandas), com ataque imediato e queda de 20% por quadro. O corpo inteiro segue essa batida pela mola `groove`: os caroços pulsam, a massa incha um pouco, sacode de leve e uma gota pinga embaixo do relógio nas batidas fortes. A intensidade é `motion.groove` (0 a 1, padrão 0,5); `modules.cava = false` ou `motion.reduced` a zeram. Sem som, `beat` chega a 0 e o shell para de redesenhar.
+
+Quando o volume muda por fora do Honey (teclas de mídia, `wpctl`, outro app), a gota de volume incha por 1,5 s e mostra uma barra com a porcentagem. Mudanças feitas pelo slider ou pelo mute do próprio Honey abrem uma janela de 500 ms em que o eco do serviço de áudio é ignorado; com o painel de controles aberto, o indicador não aparece.
+
+## Forma do mel
+
+O corpo (`components/material.plm`, componente `Honey`) é uma caixa com seis caroços de tamanhos diferentes fundidos à borda inferior; eles derivam com `noise(..., time)` e dão o contorno irregular que respira. Não há gotas soltas. O movimento contínuo escala com o token `life` (`motion.life`, 0 a 2, padrão 1); `motion.reduced` zera `life` e `deform`, e o mel fica estático. A opacidade padrão do mel é 0,66 (`appearance.opacity`). Botões, linhas e campo de busca usam `Gob` (pílula com dois caroços, sem vidro, para não empilhar refração); os sliders usam `Fluid`, cuja gota final segue o valor por mola viscosa e estica com a velocidade; as barras do Cava são elipses fundidas. Não use `path` aqui: um `path` fechado custou cerca de 12 ms de leitura de cena por frame com o launcher aberto (contra 0,1 ms com elipses), e o shell ficava lento. Limitações do Pleamar 0.2.8: `children` e `repeat` não valem dentro de `body`, então cada painel continua sendo um corpo separado, e `rim` só aceita porcentagem literal (por isso `write_palette` ainda a reescreve). Todos os tokens do material (`life`, `dispersion`, `dome`, `ripple`, molas `blob` e `drip`) vêm de `palette()` em `core/config.py`.
+
+## Wallpapers
+
+`honeyctl toggle wallpapers` (Super+Shift+W nos três perfis) abre a colmeia: a gota central cresce e mostra 12 imagens por página como hexágonos de mel (três caixas rotacionadas; a miniatura é recortada por três `clip` em faixa aninhados). No hover o hexágono pinga; ao escolher, ele cede, escorre e o painel fecha. A pasta vem de `wallpaper.folder` (padrão `~/Imagens/Wallpapers`; png, jpg, jpeg e webp) e o ajuste de `wallpaper.fit` (`fill`, `fit`, `center`, `tile`, `stretch`), ambos em `programs.honeyShell.settings`. A escolha fica em `$XDG_STATE_HOME/honey/wallpaper.json`; `honey-wallpaper.service` roda `honeyctl wallpaper-run`, que usa essa imagem ou cai no wallpaper do pacote. Em demo só as imagens de `fixtures/` aparecem e nada é aplicado. `modules.wallpaper = false` desliga o painel.
+
+## Tipografia
+
+Nunito no texto de UI (peso 600 em texto pequeno, +1 px sobre a DejaVu por causa do x-height menor) e Fredoka nos títulos e nos dígitos do relógio. O pleamar só repassa `family` e `weight`: não há `tnum`, e `family:` só aceita string literal (não aceita `let`), então os nomes estão escritos em cada `text` e `tests/test_fonts.py` falha se algum nome estiver errado, já que um nome errado cai em silêncio no fallback. Como os dígitos da Fredoka são proporcionais, o relógio é montado com um `text` por dígito, cada um centralizado numa célula fixa (`clockcell`); se algum dígito encostar no vizinho, aumente a célula. As fontes vêm de `modules/desktop/honey-common.nix` (`pkgs.nunito` e `google-fonts` só com a Fredoka) e `fonts.fontconfig.defaultFonts.sansSerif` passa a ser Nunito, o que alcança GTK, Qt e o niri (pango "sans"). Hyprland usa `misc.font_family`, o swaylock tem `font=`, e o texto do pleamar-wm recebe `family: "Nunito"` por `sed` na cena (ele ignora o fontconfig padrão). Depois de aplicar, reinicie o `honey-shell`: o pleamar lê a lista de fontes só na partida.
+
+## Notificações
+
+O pleamar é o servidor `org.freedesktop.Notifications` (serviço `notifications`); o mako não é mais iniciado. Cada notificação é uma gota que desce da faixa do topo, no mesmo corpo de mel do `HoneyTop` (até `notifications.max_visible`, 3). Urgência: `low` some em `notifications.low_timeout` s e é mais fina; `normal` some em `notifications.timeout` s; `critical` ganha um aro laranja pulsando e **não expira**. Clique na gota executa a ação padrão do app, `×` dispensa e o botão laranja dispara a primeira ação extra. As que expiram saem da tela mas ficam na central (`notifications.keep`): `honeyctl toggle notifications` (Super+Shift+N) abre o painel 7 com as últimas 8, "Limpar tudo" e "Não perturbe". Uma gotinha com a contagem de não lidas fica colada ao corpo central até a central ser aberta. `honeyctl dnd on|off|toggle` liga o não perturbe (gotas escondidas, histórico mantido) e `honeyctl lock` esconde as gotas enquanto a tela está bloqueada (evento `lock_state`). Som é opt-in: `notifications.sound = true` com `notifications.sound_file` apontando um arquivo de áudio absoluto (tocado com `pw-play`/`paplay`, nunca em não perturbe). O serviço é registrado 0,4 s depois da partida do shell; notificações enviadas enquanto o shell reinicia se perdem. `modules.notifications = false` desliga tudo.
 
 ## Compatibilidade visual
 
@@ -89,4 +114,4 @@ Faça login na sessão correspondente no SDDM. O backup Home Manager usa a exten
 
 Para voltar à configuração anterior, use `#nixos` ou a geração anterior no boot. Nunca execute o script de ativação Home Manager separado enquanto estiver usando outro perfil: ele troca os mesmos arquivos de configuração do usuário.
 
-Settings completo, notificações nativas, media player, IA, wallpaper picker, overview Honey e lock screen próprio continuam para etapas posteriores.
+Settings completo, media player, IA, overview Honey e lock screen próprio continuam para etapas posteriores.

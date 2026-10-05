@@ -1,4 +1,6 @@
-{ inputs, unstablePkgs, ... }:
+# Programas do canal nixos-unstable e de flakes externos (Brave, Codex, Claude Code, Obsidian, etc.).
+# Também dá ao usuário os grupos/módulos de kernel que o Claude Desktop precisa (KVM).
+{ config, inputs, unstablePkgs, ... }:
 
 {
   environment.systemPackages = with unstablePkgs; [
@@ -7,6 +9,7 @@
     brave-origin
     codex
     code-cursor
+    claude-code
     fastfetch
     fetch
     comma
@@ -14,5 +17,11 @@
     rmatrix
     nix-index
 
-  ] ++ [ inputs.chatgpt-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default ];
+  ] ++ [
+    inputs.claude-desktop-app.packages.${unstablePkgs.stdenv.hostPlatform.system}.default
+  ];
+
+  # Claude Desktop's local Cowork VM needs these devices; no VM autostarts.
+  users.users.${config.geko.usuario.nome}.extraGroups = [ "kvm" ];
+  boot.kernelModules = [ "vhost_vsock" ];
 }

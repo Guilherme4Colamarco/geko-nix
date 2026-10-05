@@ -1,3 +1,4 @@
+# Pacote do Oracle SQL Developer (sem JRE) com JDK 17 próprio. Versão, url e hash andam juntos.
 { lib, stdenvNoCC, fetchurl, unzip, jdk17, buildFHSEnv, makeDesktopItem, symlinkJoin }:
 let
   version = "24.3.1.347.1826";
