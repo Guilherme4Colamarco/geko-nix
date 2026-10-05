@@ -28,7 +28,7 @@ in {
       hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "0x0", scale = 1.25 })
       hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "default" })
       hl.env("XCURSOR_THEME", "Adwaita")
-      hl.env("XCURSOR_SIZE", "24")
+      hl.env("XCURSOR_SIZE", "35")
       local function execbind(keys, command) hl.bind(keys, hl.dsp.exec_cmd(command)) end
       execbind("SUPER + RETURN", ${quote "${pkgs.kitty}/bin/kitty"})
       execbind("SUPER + E", ${quote "${pkgs.nautilus}/bin/nautilus"})

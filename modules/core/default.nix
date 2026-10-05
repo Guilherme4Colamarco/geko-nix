@@ -5,14 +5,7 @@
   environment.systemPackages = with pkgs; [
     ntfs3g exfatprogs dosfstools rsync gparted git micro zoxide tree
     bat eza starship fzf atuin direnv yazi age trashy btop fd wget curl jq socat
-    tailscale wakeonlan
   ];
-  services.openssh = {
-    enable = true;
-    settings = { PasswordAuthentication = false; KbdInteractiveAuthentication = false; PermitRootLogin = "no"; };
-  };
-  services.tailscale.enable = true;
-  networking.firewall.trustedInterfaces = [ "tailscale0" ];
   boot.loader.systemd-boot.configurationLimit = 10;
   nix.settings.auto-optimise-store = true;
   system.autoUpgrade = {

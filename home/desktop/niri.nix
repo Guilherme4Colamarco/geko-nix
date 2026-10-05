@@ -58,7 +58,7 @@ in {
       border { off; }
       shadow { on; color "#00000044"; softness 24; spread 2; offset x=0 y=6; }
     }
-    cursor { xcursor-theme "Adwaita"; xcursor-size 24; }
+    cursor { xcursor-theme "Adwaita"; xcursor-size 35; }
     // O niri não tem opção de fonte: overlay de atalhos, UI de captura e avisos usam
     // pango "sans 14px", que segue fonts.fontconfig.defaultFonts (honey-common.nix).
     hotkey-overlay { skip-at-startup; }

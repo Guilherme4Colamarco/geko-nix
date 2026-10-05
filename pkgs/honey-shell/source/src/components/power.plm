@@ -6,9 +6,9 @@ library PowerPanelLibrary {
     on change hot { powerhot = hot }
 
         zone box power_body { from: pwx, 0; size: pww, pwh; active: panel == 4 }
-        zone box power_hit { from: rightx, 0; size: if(compact, 88, 160), 38; cursor: pointer }
+        zone box power_hit { from: rightx, 0; size: 44, 38; cursor: pointer; active: panel != 4 }
         on press power_hit { emit request(4) }
-        figure power { at: rightx + if(compact, 44, 80), 22; size: 24, 24; color: ink }
+        figure power { at: rightx + 22, 22; size: 20, 20; color: ink }
         group { opacity: clamp((power - 0.6) / 0.4, 0, 1)
             zone box power_inside { from: rightx - 90, 40; size: if(compact, 178, 245), 310 }
             text "Sessão" { family: "Fredoka"; anchor: left center; at: rightx - 70, 78; size: 23; weight: 600; color: ink }

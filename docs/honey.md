@@ -11,7 +11,8 @@ Exemplo de preferências declarativas:
 ```nix
 programs.honeyShell.settings = {
   motion.reduced = true;
-  modules.cava = false;
+  modules.cava = false;  # o shell para de dançar com a música
+  motion.groove = 0.5;    # intensidade da dança (0 a 1)
   appearance.base = "#b97912";
   files.roots = [ "~/Documentos" "~/Downloads" "~/Imagens" ];
 };
@@ -43,11 +44,19 @@ No Pleamar-wm, Super+Tab abre overview e Super+Ctrl+F alterna o monitor livre. N
 
 ## Sessão
 
-`honeyctl session` importa o ambiente gráfico, inicia `honey-session.target` uma única vez e observa a vida do socket Wayland. Quando o compositor termina, encerra o target e seus serviços. Honey, reserva superior, wallpaper, Mako, polkit e o hook de bloqueio antes de suspender pertencem ao target. O helper Honey observa clipboard e Cava; seus filhos pertencem ao grupo do serviço.
+`honeyctl session` importa o ambiente gráfico, inicia `honey-session.target` uma única vez e observa a vida do socket Wayland. Quando o compositor termina, encerra o target e seus serviços. Honey, reserva superior, wallpaper, polkit e o hook de bloqueio antes de suspender pertencem ao target. O helper Honey observa clipboard e Cava; seus filhos pertencem ao grupo do serviço.
 
 Não há timers de idle. Suspensão pelo painel exige bloqueio bem sucedido primeiro. Reboot e shutdown exigem confirmação dentro do painel. Swaylock usa PAM do NixOS; o Honey não implementa autenticação própria.
 
 O catálogo e a validação de aplicativos continuam no serviço oficial `apps.launch`. O pacote intercepta sua chamada `setsid -f sh -c` e inicia o aplicativo em um serviço transitório separado pelo systemd. `setsid` sozinho não sai do grupo de processos do serviço: reiniciar Honey encerrava auxiliares de aplicativos Electron, incluindo o GPT. Agora aplicativos pertencem à sessão gráfica, e reiniciar o shell só encerra seus próprios helpers. Outras chamadas de `setsid` usam o binário original.
+
+## Notch
+
+A barra é um notch central: volume, relógio e tray (com o power fundido na ponta) formam um único corpo de mel no meio da tela. Cada parte é ancorada à gota central, então, quando um painel abre, as vizinhas são empurradas para o lado em vez de sobrepostas. Os controles escorrem da gota de volume, o tray e o power da gota da direita, e o launcher, os wallpapers e as notificações do relógio.
+
+Não há mais painel de cava. O `bridge.py` continua lendo o cava (30 quadros por segundo) e o Luau calcula `fact.beat` com os graves (três primeiras bandas), com ataque imediato e queda de 20% por quadro. O corpo inteiro segue essa batida pela mola `groove`: os caroços pulsam, a massa incha um pouco, sacode de leve e uma gota pinga embaixo do relógio nas batidas fortes. A intensidade é `motion.groove` (0 a 1, padrão 0,5); `modules.cava = false` ou `motion.reduced` a zeram. Sem som, `beat` chega a 0 e o shell para de redesenhar.
+
+Quando o volume muda por fora do Honey (teclas de mídia, `wpctl`, outro app), a gota de volume incha por 1,5 s e mostra uma barra com a porcentagem. Mudanças feitas pelo slider ou pelo mute do próprio Honey abrem uma janela de 500 ms em que o eco do serviço de áudio é ignorado; com o painel de controles aberto, o indicador não aparece.
 
 ## Forma do mel
 
@@ -59,7 +68,7 @@ O corpo (`components/material.plm`, componente `Honey`) é uma caixa com seis ca
 
 ## Tipografia
 
-Nunito no texto de UI (peso 600 em texto pequeno, +1 px sobre a DejaVu por causa do x-height menor) e Fredoka nos títulos e nos dígitos do relógio. O pleamar só repassa `family` e `weight`: não há `tnum`, e `family:` só aceita string literal (não aceita `let`), então os nomes estão escritos em cada `text` e `tests/test_fonts.py` falha se algum nome estiver errado, já que um nome errado cai em silêncio no fallback. Como os dígitos da Fredoka são proporcionais, o relógio é montado com um `text` por dígito, cada um centralizado numa célula fixa (`clockcell`); se algum dígito encostar no vizinho, aumente a célula. As fontes vêm de `modules/desktop/honey-common.nix` (`pkgs.nunito` e `google-fonts` só com a Fredoka) e `fonts.fontconfig.defaultFonts.sansSerif` passa a ser Nunito, o que alcança GTK, Qt, o niri (pango "sans") e o mako. Hyprland usa `misc.font_family`, swaylock e mako têm `font=`, e o texto do pleamar-wm recebe `family: "Nunito"` por `sed` na cena (ele ignora o fontconfig padrão). Depois de aplicar, reinicie o `honey-shell`: o pleamar lê a lista de fontes só na partida.
+Nunito no texto de UI (peso 600 em texto pequeno, +1 px sobre a DejaVu por causa do x-height menor) e Fredoka nos títulos e nos dígitos do relógio. O pleamar só repassa `family` e `weight`: não há `tnum`, e `family:` só aceita string literal (não aceita `let`), então os nomes estão escritos em cada `text` e `tests/test_fonts.py` falha se algum nome estiver errado, já que um nome errado cai em silêncio no fallback. Como os dígitos da Fredoka são proporcionais, o relógio é montado com um `text` por dígito, cada um centralizado numa célula fixa (`clockcell`); se algum dígito encostar no vizinho, aumente a célula. As fontes vêm de `modules/desktop/honey-common.nix` (`pkgs.nunito` e `google-fonts` só com a Fredoka) e `fonts.fontconfig.defaultFonts.sansSerif` passa a ser Nunito, o que alcança GTK, Qt e o niri (pango "sans"). Hyprland usa `misc.font_family`, o swaylock tem `font=`, e o texto do pleamar-wm recebe `family: "Nunito"` por `sed` na cena (ele ignora o fontconfig padrão). Depois de aplicar, reinicie o `honey-shell`: o pleamar lê a lista de fontes só na partida.
 
 ## Notificações
 

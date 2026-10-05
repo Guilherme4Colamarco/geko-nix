@@ -8,7 +8,7 @@ hl.config({
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1.0 })
 hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "auto", scale = 1.0 })
 hl.env("XCURSOR_THEME", "Adwaita")
-hl.env("XCURSOR_SIZE", "24")
+hl.env("XCURSOR_SIZE", "35")
 
 local function execbind(keys, command)
   hl.bind(keys, hl.dsp.exec_cmd(command))

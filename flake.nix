@@ -20,6 +20,10 @@
       url = "github:affaan-m/ECC/ef648e01899ba3e8dc6371642deaaf64b4477775";
       flake = false;
     };
+    pstack = {
+      url = "github:shrimpwtf/oh-my-pstack/fc0eabd25f21b194a336b640e75e29c252382866";
+      flake = false;
+    };
     astrovim = { url = "github:AstroNvim/template"; flake = false; };
     pleamar-wm = {
       url = "github:k4ditano/pleamar-wm/548b3fc226e65128770eef832b26142b33e23729";
@@ -41,13 +45,13 @@
         ./modules/core
         ./modules/hardware/nvidia-desktop.nix
         ./modules/services/docker.nix
+        ./modules/services/homelab.nix
         ./modules/desktop/options.nix
         ./modules/desktop/gaming.nix
         ./programs/stables.nix
         ./programs/unstables.nix
         ./programs/development.nix
         ./programs/flatpaks.nix
-        ./programs/games.nix
         ./programs/faculdade.nix
         {
           home-manager.useGlobalPkgs = true;

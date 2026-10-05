@@ -5,8 +5,11 @@ let
 in {
   # Skills de usuario: disponiveis no Claude Code em qualquer projeto.
   # Cada skill e gerenciada separadamente para preservar as demais em ~/.claude/skills.
-  home.file = lib.mapAttrs' (name: _: {
+  home.file = (lib.mapAttrs' (name: _: {
     name = ".claude/skills/${name}";
     value.source = "${inputs.ecc}/skills/${name}";
-  }) eccSkills;
+  }) eccSkills) // {
+    ".claude/skills/arena".source = "${inputs.pstack}/skills/arena";
+    ".claude/skills/pstack-pi".source = "${inputs.pstack}/skills/pstack-pi";
+  };
 }

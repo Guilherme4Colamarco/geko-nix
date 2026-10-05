@@ -30,13 +30,14 @@ Comandos úteis:
   - `checks.x86_64-linux`: `honey-pleamar`, `honey-pleamar-core` (sem captura), `honey-niri`, `honey-hyprland`.
   - Não há `packages` nem overlays. Pacotes próprios entram por `callPackage`/`import`.
   - O mapa de perfis está duplicado (if/else em `mkDesktop` e a lista de `nixosConfigurations`). Perfil novo exige os dois.
-- Módulos comuns (todos os perfis): nix-flatpak, home-manager, `configuration.nix`, `modules/core`, `nvidia-desktop`, `docker`, `desktop/options`, `desktop/gaming`, os seis arquivos de `programs/`, e um bloco inline do home-manager (`useGlobalPkgs`, `useUserPackages`, `backupFileExtension="before-geko-nix"`, `users.geko = import ./home`).
+- Módulos comuns (todos os perfis): nix-flatpak, home-manager, `configuration.nix`, `modules/core`, `nvidia-desktop`, `docker`, `desktop/options`, `desktop/gaming`, os cinco arquivos de `programs/`, e um bloco inline do home-manager (`useGlobalPkgs`, `useUserPackages`, `backupFileExtension="before-geko-nix"`, `users.geko = import ./home`).
 - Inputs: `nixpkgs` (nixos-26.05), `home-manager` (release-26.05), `nixpkgs-unstable` (como `unstablePkgs`), `desktopPkgs` (= nixpkgs fixado pelo `serpantinum`; fornece hyprland e portal-hyprland), `serpantinum`, `pleamar-wm` (+ `marea`), `chatgpt-desktop-app`, `claude-desktop-app`, `nix-flatpak`, `astrovim` (`flake=false`). Vários pinados por rev.
 - Arquivos:
   - `configuration.nix`: boot, rede, locale pt_BR, SDDM, pipewire, CUPS, i2c, usuário `geko`, `stateVersion` 26.05. `hardware-configuration.nix` é gerado, não editar.
-  - `modules/core/default.nix`: fish, nix-ld, CLI, ssh só com chave, tailscale, `system.autoUpgrade` (04:40, `operation=boot`, reescreve `flake.lock`), `programs.nh` (flake fixo em `/home/geko/Documentos/geko-nix`).
+  - `modules/core/default.nix`: fish, nix-ld, CLI, `system.autoUpgrade` (04:40, `operation=boot`, reescreve `flake.lock`), `programs.nh` (flake fixo em `/home/geko/Documentos/geko-nix`).
+  - `modules/services/homelab.nix`: modo servidor caseiro (Tailscale + SSH só por chave), **desligado por padrão**; liga com `geko.homelab.enable = true` e `geko.homelab.ssh.authorizedKeys`, firewall abre só a porta 22 em `tailscale0`.
   - `modules/hardware/nvidia-desktop.nix`: tudo em `mkDefault`. `modules/services/docker.nix`: autoPrune `--all` e grupo docker (equivale a root).
-  - `programs/`: `stables` (neovim AstroNvim, ddcutil, nautilus), `unstables` (brave-origin, codex, claude-code, obsidian e apps de flake), `development`, `faculdade` (JDK21, netbeans, sqldeveloper), `flatpaks` (Stremio), `games` (Proton com hash fixo).
+  - `programs/`: `stables` (neovim AstroNvim, ddcutil, nautilus), `unstables` (brave-origin, codex, claude-code, obsidian e apps de flake), `development`, `faculdade` (JDK21, netbeans, sqldeveloper), `flatpaks` (Stremio). Jogos ficam em `modules/desktop/gaming.nix` (options `mySystem.gaming.*`, defaults da máquina e Protons com hash fixo).
   - `pkgs/pleamar-wm.nix`: `overrideAttrs` com o patch de framebuffer. Atualizar o pin pode quebrar o patch.
 - Options próprias: `geko.desktop.{terminal,fileManager,clipboard.enable}` (`modules/desktop/options.nix`) e `mySystem.gaming.*` (`modules/desktop/gaming.nix`).
 - Onde adicionar: pacote estável em `programs/stables.nix` ou `development.nix`; unstable em `programs/unstables.nix`; flatpak em `programs/flatpaks.nix`; serviço em novo `modules/services/x.nix` listado em `flake.nix`; pacote customizado em `pkgs/` com `callPackage`.
@@ -55,7 +56,7 @@ Comandos úteis:
 | `hyprland` | `modules/desktop/hyprland.nix` | `home/desktop/hyprland.nix` | Hyprland puro |
 
 - Não existe option de perfil. O perfil é a escolha do alvo do flake.
-- `pleamar`, `niri` e `hyprland` são perfis "Honey": importam `honey-common.nix` (upower, keyring, polkit, pam swaylock, i2c/ddcutil) e ligam `programs.honeyShell` (`home/desktop/honey.nix`) com `settings.compositor`. O `honey.nix` define os serviços de usuário `honey-{reserve,shell,wallpaper,polkit,sleep-lock}` (as notificações são do próprio shell; o mako foi removido) no `honey-session.target`, além de swaylock e mako em âmbar.
+- `pleamar`, `niri` e `hyprland` são perfis "Honey": importam `honey-common.nix` (upower, keyring, polkit, pam swaylock, i2c/ddcutil) e ligam `programs.honeyShell` (`home/desktop/honey.nix`) com `settings.compositor`. O `honey.nix` define os serviços de usuário `honey-{reserve,shell,wallpaper,polkit,sleep-lock}` (as notificações são do próprio shell; o mako foi removido) no `honey-session.target`, além do swaylock em âmbar.
 - Cada módulo NixOS de perfil adiciona seu lado home com `home-manager.users.geko.imports = [ ../../home/desktop/<perfil>.nix ]`. Nos módulos home só `inputs` está disponível como specialArg.
 - `home/default.nix`: importa `fish.nix`, `stateVersion`, `mcp-nixos`, AstroNvim de `inputs.astrovim` (com `substituteInPlace`).
 - `config/`: `fish/config.fish` (`readFile` em `home/fish.nix`), `starship.toml`, `hyprland/serpantinum.lua` (`readFile` em `modules/desktop/serpantinum.nix`, vira `~/.config/hypr/hyprland.lua`). Os perfis Honey NÃO usam `config/`: geram tudo inline em `home/desktop/*.nix`. O pleamar gera `~/.config/pleamar/{keys.conf,session.conf,autostart,wm}`.
@@ -73,7 +74,7 @@ Comandos úteis:
 
 ## 4. Honey shell (`pkgs/honey-shell/`, `S` = `source/`)
 
-Shell de desktop (launcher, clipboard, controles, tray, power, cava, relógio) para o runtime Pleamar. Documentação: `docs/honey.md`.
+Shell de desktop (launcher, clipboard, controles, tray, power, relógio; o corpo dança com o cava) para o runtime Pleamar. Documentação: `docs/honey.md`.
 
 - Processos:
   - `honey-shell` (bash que executa `pleamar --scene src/honey.plm --no-hud --stall 0`) e `honey-reserve` (surface de 1 px que reserva 80 px).
@@ -98,7 +99,8 @@ Shell de desktop (launcher, clipboard, controles, tray, power, cava, relógio) p
 ## 5. Honey UI (pleamar)
 
 - Pleamar 0.2.8, `language 0.2`. `.plm` é a cena declarativa (desenho, springs, zonas, regras). `.luau` é a lógica, sandboxed, só publica fatos e não conhece coordenadas. `pleamar-wm` é o WM e é ele mesmo uma cena. Rode sempre `pleamar --check x.plm`. A doc do executável (`pleamar --docs ...`) prevalece sobre a skill.
-- Cena única `S/src/honey.plm` (surface `main` em tela cheia, pass-through quando ociosa). Painel aberto = `fact panel`: 0 idle, 1 launcher, 2 controls, 3 tray, 4 power, 5 cava, 6 wallpapers, 7 notificações.
+- Cena única `S/src/honey.plm` (surface `main` em tela cheia, pass-through quando ociosa). Painel aberto = `fact panel`: 0 idle, 1 launcher, 2 controls, 3 tray, 4 power, 6 wallpapers, 7 notificações (o 5, cava, não existe mais).
+- Layout em notch: `ctlx`/`centralx`/`trpx`/`rightx` são ancorados à gota central (`notchgap`), não às bordas da tela. `groove` (mola) segue `fact.beat * grooveamt`; `volosdv` segue `fact.volosd` (indicador de volume externo, `audio_changed` em `honey.luau`).
 
 | Arquivo | Papel |
 |---|---|
@@ -108,7 +110,6 @@ Shell de desktop (launcher, clipboard, controles, tray, power, cava, relógio) p
 | `components/controls.plm` | sliders de volume e brilho, mute |
 | `components/tray.plm` | Wi-Fi/BT, ícones, menu DBus |
 | `components/power.plm` | 5 ações, com confirmação em 2 cliques para reboot e shutdown |
-| `components/cava.plm` | visualizador |
 | `components/result.plm` | linha do launcher |
 | `components/wallpapers.plm` | colmeia de wallpapers (`HexWall` em `material.plm`), painel 6 |
 | `components/notifications.plm` | gotas de notificação (`NoteToasts`) e central (`NotePanel`, painel 7); as formas ficam no `HoneyTop` |
@@ -126,7 +127,7 @@ Shell de desktop (launcher, clipboard, controles, tray, power, cava, relógio) p
   - `sys.call` novo exige `permissions` em `honey.plm` e, se usar `run`, o comando em `run:`.
   - `model` tem `max` fixo (`hits max 7` = `fact.capacity`; `traymini` e `icons` têm `max 5`).
   - Em sliders, mantenha `pointer.x` inline.
-  - Posições dependem de `ww`, `sidex`, `trayx`, `rightx`, `compact` (ww < 1400). Mudar a largura exige ajustar o par `Honey(...)` e a `zone box *_body`.
+  - Posições dependem de `centralx`/`centralw` (o notch) e de `compact` (ww < 1400). `sidex`, `trayx` e `rightx` são derivados da gota central.
   - Texto em pt-BR. Fontes: `family: "Nunito"` no texto de UI (peso 600 em texto pequeno) e `family: "Fredoka"` só em títulos e nos dígitos do relógio (um dígito por `text`, dígitos proporcionais). `family:` só aceita string literal (não aceita `let`), e nome errado não falha no `--check`: `tests/test_fonts.py` cobre isso. As fontes vêm de `modules/desktop/honey-common.nix`.
 - Onde editar:
   - **bar/relógio**: `honey.plm`.
@@ -134,12 +135,12 @@ Shell de desktop (launcher, clipboard, controles, tray, power, cava, relógio) p
   - **controls**: `controls.plm` e `on("volume_set"|"brightness_set"|"mute")`.
   - **tray**: `tray.plm` e `tray_rows`/`on("tray_*")`.
   - **power**: `power.plm` e `on("power_action")`.
-  - **cava**: `cava.plm` e `stream()` em `bridge.py`.
+  - **dança com a música**: `fact.beat` no handler `cava` de `honey.luau`, mola `groove` em `honey.plm`, `g` e `sway` no `HoneyTop`; leitura em `stream()` de `bridge.py`.
   - **novo painel**: `event`/`prop` em `honey.plm`, um componente novo, `request(N)` em `honey.luau` (limite `which > 5`) e um `fact xxxon`.
 
 ## Regra de teste do shell
 
-Antes de carregar um shell novo (`pleamar --scene ...`), mate o antigo: `systemctl --user stop honey-shell.service` e `pkill -f '^pleamar --scene' || true`. Dois shells sobrepostos falseiam capturas e medições. Ao terminar, `systemctl --user start honey-shell.service`. Medir custo: `pleamar --scene src/honey.plm --seconds 9 --no-hud --no-vsync` e olhar a linha `cycle` (meta: frame médio abaixo de ~1 ms, `reading the scene` perto de 0,1 ms). Nunca use `path` fechado no material (custa ~12 ms por frame).
+Antes de carregar um shell novo (`pleamar --scene ...`), mate o antigo: `systemctl --user stop honey-shell.service` e `pkill -f 'bin/pleamar --scene' || true` (o processo aparece com o caminho completo do Nix, então `^pleamar` não casa). Dois shells sobrepostos falseiam capturas e medições. Ao terminar, `systemctl --user start honey-shell.service`. Medir custo: `pleamar --scene src/honey.plm --seconds 9 --no-hud --no-vsync` e olhar a linha `cycle` (meta: frame médio abaixo de ~1 ms, `reading the scene` perto de 0,1 ms). Nunca use `path` fechado no material (custa ~12 ms por frame).
 
 ## 6. Estado atual e pendências conhecidas
 

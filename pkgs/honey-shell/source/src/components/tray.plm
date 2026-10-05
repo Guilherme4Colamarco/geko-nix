@@ -6,7 +6,7 @@ library TrayPanelLibrary {
     on change hot { trayhot = hot }
 
         zone box tray_body { from: trpx, 0; size: trpw, trph; active: panel == 3 }
-        zone box tray_hit { from: trayx, 0; size: if(compact, 90, 175), 38; cursor: pointer }
+        zone box tray_hit { from: trayx, 0; size: if(compact, 90, 150), 38; cursor: pointer; active: panel != 3 }
         on press tray_hit { emit request(3) }
         figure wifi { at: trayx + 27, 22; size: 22, 22; color: ink; opacity: if(wifion, 1, .4) }
         figure bluetooth { at: trayx + 61, 22; size: 20, 20; color: ink; opacity: if(bton, 1, .4) }

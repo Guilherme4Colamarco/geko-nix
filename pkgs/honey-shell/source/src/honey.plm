@@ -1,7 +1,6 @@
 language 0.2
 import "themes/active.plm"
 import "components/material.plm"
-import "components/cava.plm"
 import "components/controls.plm"
 import "components/tray.plm"
 import "components/power.plm"
@@ -50,6 +49,8 @@ scene Honey {
     fact wifion = false
     fact bton = false
     fact energy = 0
+    fact beat = 0
+    fact volosd = 0
     text query = ""
     text status = "Preparando serviços…"
     text modename = "Aplicativos"
@@ -97,7 +98,6 @@ scene Honey {
     event test_controls
     event test_power
     event test_tray
-    event test_cava
     event test_walls
     event test_notes
     figure bluetooth = file "icons/bluetooth.svg"
@@ -120,8 +120,12 @@ scene Honey {
     let ph = min(panelheight, hh - 100)
     prop centerhot = 0 ~quick
     follow centerhot = if(launcher_hit.hover, 1, 0)
-    prop audioflow = 0 ~calm
-    follow audioflow = if(reduced, 0, energy * 0.2)
+    // The whole body dances to the bass; grooveamt is 0 with reduced motion or cava off.
+    prop groove = 0 ~spring(420, 16)
+    follow groove = beat * grooveamt
+    // Volume changed from outside Honey: the volume drop swells for a moment.
+    prop volosdv = 0 ~droplet
+    follow volosdv = volosd
     prop melt = 0 ~viscous
     prop drop = 0 ~droplet
     follow melt = if(previewphase >= 0, clamp(previewphase, 0, 1), if(target == 1, 1, 0))
@@ -134,8 +138,6 @@ scene Honey {
     follow tray = if(target == 3, 1, 0)
     prop power = 0 ~viscous
     follow power = if(target == 4, 1, 0)
-    prop media = 0 ~viscous
-    follow media = if(target == 5, 1, 0)
     prop wallp = 0 ~viscous
     follow wallp = if(target == 6, 1, 0)
     let hexr = if(compact, 50, 62)
@@ -147,38 +149,36 @@ scene Honey {
     follow notep = if(target == 7, 1, 0)
     let notew = min(430, ww - 40)
     let noteh = 330
-    let launchw = mix(if(compact, 190, 270), pw, melt)
+    let launchw = mix(if(compact, 150, 180), pw, melt)
     let launchh = 58 + (ph - 58) * melt
     // The same central drop opens either into the launcher or into the honeycomb.
     let centralw = launchw + max(0, wallw - launchw) * wallp + max(0, notew - launchw) * notep
     let centralx = cx - centralw * 0.5
     let centralh = launchh + max(0, noteh - launchh) * notep + max(0, wallh - launchh) * wallp
     let revealed = clamp((melt - 0.6) / 0.4, 0, 1)
-    let sidex = max(ww * 0.24 - spacing, 150)
-    let trayx = min(ww * 0.73 + spacing, ww - if(compact, 210, 310))
-    let rightx = ww - if(compact, 100, 190)
     let cw = min(300, ww * 0.25)
-    // Geometry of every top-strip drop, in one place: HoneyTop melts them into
-    // a single body and the panels place their zones and contents from it.
-    fact cavahot = 0
+    // Notch: volume | clock | tray (+ power) sit side by side in the centre and
+    // melt into one body. Each drop is anchored to the central one, so when a
+    // panel grows its neighbours are pushed aside instead of overlapped.
+    let notchgap = 6
     fact ctrlhot = 0
     fact trayhot = 0
     fact powerhot = 0
-    let cavx = 12
-    let cavw = if(compact, 88, 180) + media * if(compact, 192, 100)
-    let cavh = 42 + media * 190
-    let cavm = media * deform + audioflow + cavahot * 0.15 * deform
-    let ctlx = sidex - mix(if(compact, 44, 100), 125, controls)
-    let ctlw = mix(if(compact, 88, 200), 250, controls)
+    let ctlw = mix(if(compact, 56, 64) + volosdv * 120, 250, controls)
+    let ctlx = centralx - notchgap - ctlw
+    let sidex = ctlx + ctlw * 0.5
     let ctlh = 40 + controls * 244
     let ctlm = ((control_drop - controls) * 3 + ctrlhot * 0.15) * deform
     let cenm = ((drop - melt) * 5 + centerhot * 0.15) * deform
-    let trpx = trayx
-    let trpw = mix(if(compact, 90, 175), 280, tray)
+    let trpx = centralx + centralw + notchgap
+    let trayx = trpx
+    let trpw = mix(if(compact, 90, 150), 280, tray)
     let trph = 38 + tray * 370
     let trpm = (tray * 0.4 + trayhot * 0.15) * deform
+    // Power is a small drop fused to the right end of the tray.
+    let rightx = trpx + trpw - 4
     let pwx = rightx - power * 95
-    let pww = mix(if(compact, 88, 160), if(compact, 183, 255), power)
+    let pww = mix(44, if(compact, 183, 255), power)
     let pwh = 38 + power * 314
     let pwm = (power * 0.5 + powerhot * 0.15) * deform
     // Notification drops hang under the central body; each slot grows with a slow spring.
@@ -203,12 +203,11 @@ scene Honey {
     on press outside { emit request(0) }
     // Transparent gaps stay pass-through in idle.
     // One melting body for the whole strip; panels draw only their contents.
-    HoneyTop(cavx, cavw, cavh, cavm, ctlx, ctlw, ctlh, ctlm, centralx, centralw, centralh, cenm, trpx, trpw, trph, trpm, pwx, pww, pwh, pwm, toastx, toasty, toastw, toasth, toastg, nt0, nt1, nt2, nlv0, nlv1, nlv2, unread, badgex, badgey)
-    CavaPanel()
+    HoneyTop(groove, ctlx, ctlw, ctlh, ctlm, centralx, centralw, centralh, cenm, trpx, trpw, trph, trpm, pwx, pww, pwh, pwm, toastx, toasty, toastw, toasth, toastg, nt0, nt1, nt2, nlv0, nlv1, nlv2, unread, badgex, badgey)
     ControlsPanel()
     shader meniscus { at: centralx, 0; size: centralw, centralh; values: melt, roundness; colors: gold; opacity: melt }
     zone box launcher_body { from: centralx, 0; size: centralw, centralh; active: panel == 1 }
-    zone box launcher_hit { from: cx - if(compact, 95, 135), 0; size: if(compact, 190, 270), 64; cursor: pointer; active: panel != 1 }
+    zone box launcher_hit { from: cx - if(compact, 75, 90), 0; size: if(compact, 150, 180), 64; cursor: pointer; active: panel != 1 }
     on press launcher_hit { emit request(1) }
     // Fredoka has proportional digits and pleamar cannot turn on `tnum`, so the
     // clock is laid out in fixed cells: each digit is centred in its own cell
@@ -275,12 +274,10 @@ scene Honey {
     on test_controls { emit request(2) }
     on test_tray { emit request(3) }
     on test_power { emit request(4) }
-    on test_cava { emit request(5) }
     on change melt while target == 0 and panel == 1 and abs(melt) < 0.008 { emit settled }
     on change controls while target == 0 and panel == 2 and abs(controls) < 0.008 { emit settled }
     on change tray while target == 0 and panel == 3 and abs(tray) < 0.008 { emit settled }
     on change power while target == 0 and panel == 4 and abs(power) < 0.008 { emit settled }
-    on change media while target == 0 and panel == 5 and abs(media) < 0.008 { emit settled }
     on change wallp while target == 0 and panel == 6 and abs(wallp) < 0.008 { emit settled }
     on change notep while target == 0 and panel == 7 and abs(notep) < 0.008 { emit settled }
     on test_walls { emit request(6) }

@@ -329,7 +329,7 @@ end
 request = function(which)
     which = math.floor(which)
     if which < 0 or which > 7 then pendingTrayMenu = false; return end
-    if which == 2 and not fact.controlson or which == 3 and not fact.trayon or which == 4 and not fact.poweron or which == 5 and not fact.cavaon or which == 6 and not fact.wallon or which == 7 and not fact.noteon then pendingTrayMenu = false; return end
+    if which == 2 and not fact.controlson or which == 3 and not fact.trayon or which == 4 and not fact.poweron or which == 5 or which == 6 and not fact.wallon or which == 7 and not fact.noteon then pendingTrayMenu = false; return end
     if fact.panel == 0 then opened(which); return end
     if which == fact.panel and not closing then which = 0 end
     fact.previewphase = -1
@@ -428,6 +428,26 @@ end)
 
 local wifi = "Rede —"
 local bluetooth = "BT —"
+-- A volume change that did not come from Honey itself (media keys, wpctl,
+-- another app) swells the volume drop for a moment.
+local ownVolume, osdToken, audioSeen = 0, 0, false
+local function own_volume()
+    ownVolume += 1
+    local token = ownVolume
+    after(500, function() if ownVolume == token then ownVolume = 0 end end)
+end
+local function show_volume()
+    osdToken += 1
+    local token = osdToken
+    fact.volosd = 1
+    after(1500, function() if osdToken == token then fact.volosd = 0 end end)
+end
+local function audio_changed(volume, muted)
+    local changed = math.abs(volume - fact.volume) > 0.004 or muted ~= fact.muted
+    fact.volume = volume; fact.muted = muted; text.mutelabel = muted and "Silenciado" or "Som ativo"
+    if audioSeen and changed and ownVolume == 0 and fact.panel ~= 2 then show_volume() end
+    audioSeen = true
+end
 local function live_services()
     if liveStarted then return end
     liveStarted = true
@@ -460,7 +480,7 @@ local function live_services()
     watch("apps", function(list) if fact.demo then return end; apps = list; if fact.panel == 1 and fact.mode == 0 then search() end end)
     watch("audio", function(a)
         if fact.demo then return end
-        fact.audioavailable = a.outputs ~= nil and #a.outputs > 0; fact.volume = a.volume or 0; fact.muted = a.muted or false; text.mutelabel = fact.muted and "Silenciado" or "Som ativo"
+        fact.audioavailable = a.outputs ~= nil and #a.outputs > 0; audio_changed(a.volume or 0, a.muted or false)
     end, function() fact.audioavailable = false; text.status = "Áudio indisponível" end)
     watch("brightness", function(b)
         if fact.demo then return end
@@ -506,7 +526,7 @@ local function apply_config(packet)
         if wasDemo then apps={}; model.icons={}; model.traymini={}; fact.audioavailable=false; fact.backlight=false end
         live_services()
     end
-    if not c.modules.cava and fact.panel == 5 or not c.modules.controls and fact.panel == 2 or not c.modules.tray and fact.panel == 3 or not c.modules.power and fact.panel == 4 or c.modules.wallpaper == false and fact.panel == 6 or c.modules.notifications == false and fact.panel == 7 then request(0) end
+    if fact.panel == 5 or not c.modules.controls and fact.panel == 2 or not c.modules.tray and fact.panel == 3 or not c.modules.power and fact.panel == 4 or c.modules.wallpaper == false and fact.panel == 6 or c.modules.notifications == false and fact.panel == 7 then request(0) end
     if fact.panel == 1 and fact.mode == 0 then search() end
     lastConfig = c
     log("config", c.mode, packet.error)
@@ -517,6 +537,7 @@ on("volume_set", function(value)
     local previous = fact.volume
     if not fact.demo and not fact.audioavailable then text.status="Áudio indisponível";return end
     fact.volume = value
+    own_volume()
     if fact.demo then text.status="[demo] volume simulado"
     else
         local ok, err = pcall(function() sys.call("audio.volume", value) end)
@@ -557,6 +578,7 @@ on("brightness_set", function(value)
     log("brightness", value)
 end)
 on("mute", function()
+    own_volume()
     if fact.demo then fact.muted = not fact.muted; text.mutelabel = fact.muted and "Silenciado" or "Som ativo" else
         if not fact.audioavailable then text.status="Áudio indisponível";return end
         local ok, err=pcall(function() sys.call("audio.mute") end)
@@ -670,6 +692,7 @@ on("wall_page", function(delta)
     load_walls()
 end)
 
+local beat = 0
 spawn("python3", {"services/bridge.py", "stream"}, function(line)
     local ok, packet=pcall(json.decode,line)
     if not ok then log("bridge parse",line);return end
@@ -678,6 +701,10 @@ spawn("python3", {"services/bridge.py", "stream"}, function(line)
         local rows={};local sum=0
         for _,v in ipairs(packet.bars or {}) do rows[#rows+1]={level=v};sum+=v end
         model.bands=rows;fact.energy=sum/math.max(#rows,1)
+        -- Bass (first three bands) hits fast and falls slowly, so the body marks the beat.
+        local bars=packet.bars or {}
+        beat=math.max(((bars[1] or 0)+(bars[2] or 0)+(bars[3] or 0))/3, beat*0.8)
+        fact.beat=if beat < 0.01 then 0 else beat
         text.mediastatus=packet.error ~= nil and packet.error ~= "" and packet.error or (fact.demo and "Cava · áudio simulado" or "Cava · áudio do desktop")
     elseif packet.type=="brightness" then
         ddcBacklight=packet.available or false

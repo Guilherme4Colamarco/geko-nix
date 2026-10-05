@@ -15,6 +15,7 @@ library HoneyTheme {
     let dropcount = 3
     let deform = 1.0
     let life = 1.0
+    let grooveamt = 0.5
     let dispersion = 0.068
     let dome = 0.1
     let ripple = 0.3

@@ -10,11 +10,17 @@ library ControlsPanelLibrary {
     // Keep the pointer expression inline: a cached let lags one drag event.
 
         zone box controls_body { from: ctlx, 0; size: ctlw, ctlh; active: panel == 2 }
-        zone box controls_hit { from: sidex - if(compact, 44, 100), 0; size: if(compact, 88, 200), 40; cursor: pointer }
+        zone box controls_hit { from: ctlx, 0; size: ctlw, 40; cursor: pointer; active: panel != 2 }
         on press controls_hit { emit request(2) }
-        figure sun { at: sidex - 20, 22; size: 22, 22; color: ink }
-        figure volume { at: sidex + 20, 22; size: 22, 22; color: ink; show: not muted }
-        figure muted { at: sidex + 20, 22; size: 22, 22; color: ink; show: muted }
+        let volicon = ctlx + if(compact, 28, 32)
+        figure volume { at: volicon, 22; size: 22, 22; color: ink; show: not muted }
+        figure muted { at: volicon, 22; size: 22, 22; color: ink; show: muted }
+        // External volume change: a honey level and the percentage, inside the swollen drop.
+        group { opacity: clamp((volosdv - 0.4) / 0.6, 0, 1) * (1 - controls); show: volosdv > 0.02
+            box { from: volicon + 22, 18; size: 72, 8; corner: 4; color: ink; opacity: 0.22 }
+            box { from: volicon + 22, 18; size: max(4, 72 * volume), 8; corner: 4; color: if(muted, ink, orange); opacity: if(muted, 0.45, 1) }
+            text "{floor(volume * 100 + 0.5)}%" { family: "Nunito"; anchor: left center; at: volicon + 100, 22; size: 13; weight: 700; color: ink }
+        }
         group { opacity: clamp((controls - 0.6) / 0.4, 0, 1)
             zone box control_inside { from: sidex - 120, 40; size: 240, 240 }
             text "Controles" { family: "Fredoka"; anchor: left center; at: sidex - 100, 80; size: 22; weight: 600; color: ink }

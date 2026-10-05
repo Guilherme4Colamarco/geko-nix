@@ -18,10 +18,10 @@ DEFAULTS = {
                    'opacity': .66, 'glass': .72, 'refraction': .75, 'blur': .6, 'glow': .08,
                    'shadow': .22, 'thickness': 1.0, 'rounding': 40, 'drops': 3},
     'motion': {'viscosity': 1.0, 'speed': 1.0, 'elasticity': 1.0, 'bounce': .6,
-               'deformation': 1.0, 'life': 1.0, 'reduced': False},
+               'deformation': 1.0, 'life': 1.0, 'groove': .5, 'reduced': False},
     'files': {'roots': ['fixtures'], 'limit': 1000},
     'clipboard': {'history': 'fixtures/clipboard.json'},
-    'cava': {'bars': 12, 'rate': 12},
+    'cava': {'bars': 12, 'rate': 30},
     'wallpaper': {'folder': '~/Imagens/Wallpapers', 'fit': 'fill'},
     'notifications': {'timeout': 6, 'low_timeout': 3, 'max_visible': 3, 'dnd': False, 'sound': False, 'sound_file': ''},
     'compositor': 'auto', 'power': {'lock_command': []},
@@ -95,7 +95,7 @@ def validate(c):
         if not re.fullmatch(r'#[0-9a-fA-F]{6}', str(c['appearance'][k])): raise ValueError('cor inválida: '+k)
     limits = {'layout': {'spacing':(0,50),'central_width':(380,1000),'panel_height':(400,800),'reserve':(0,100)},
               'appearance': {'opacity':(.2,1),'glass':(0,1),'refraction':(0,2),'blur':(0,1),'glow':(0,.5),'shadow':(0,.8),'thickness':(.5,2),'rounding':(10,100),'drops':(0,5)},
-              'motion': {'viscosity':(.4,3),'speed':(.4,3),'elasticity':(.4,2),'bounce':(0,1),'deformation':(0,2),'life':(0,2)},
+              'motion': {'viscosity':(.4,3),'speed':(.4,3),'elasticity':(.4,2),'bounce':(0,1),'deformation':(0,2),'life':(0,2),'groove':(0,1)},
               'files': {'limit':(1,10000)}, 'cava': {'bars':(12,12),'rate':(1,30)}}
     for sec, fields in limits.items():
         for key, (low,high) in fields.items():
@@ -156,6 +156,7 @@ def palette(c):
             'tint':a['opacity'],'glassiness':a['glass'],'refract':a['refraction'],'frost':a['blur'],
             'shade':a['shadow'],'thickness':a['thickness'],'roundness':a['rounding'],
             'dropcount':a['drops'],'deform':0 if m['reduced'] else m['deformation'],'life':0 if m['reduced'] else m['life'],
+            'grooveamt':0 if m['reduced'] or not c['modules']['cava'] else m['groove'],
             'dispersion':round(.03+.05*a['refraction'],3),'dome':round(.1*a['thickness'],3),'ripple':.3,'warn':'#ffbc82',
             'panelwidth':l['central_width'],'panelheight':l['panel_height'],'spacing':l['spacing'],'reserve':l['reserve']}
     lines=['// Generated from validated workspace configuration.','library HoneyTheme {']
