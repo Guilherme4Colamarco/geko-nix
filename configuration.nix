@@ -49,6 +49,13 @@
   # Dá à sessão ativa acesso ao receptor Logitech (Solaar).
   hardware.logitech.wireless.enable = true;
 
+  # Bluetooth (ex.: controle de PS3 sem fio). Para parear o DualShock 3,
+  # grave antes o endereço do adaptador no controle com o `sixpair` (via USB).
+  hardware.bluetooth = {
+    enable = true;
+    powerOnBoot = true;
+  };
+
   services.displayManager.sddm.enable = true;
 
   # Teclado no X11 (ABNT2).
