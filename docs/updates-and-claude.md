@@ -17,7 +17,7 @@ journalctl -u nixos-upgrade.service
 claude --version
 ```
 
-As opções ficam em `modules/core/default.nix`, e os pacotes em `programs/unstables.nix`. Para aplicar apenas no próximo boot, sem interromper a sessão atual:
+As opções ficam em `modules/core/default.nix`, e as seleções em `programs/user.nix` (catálogo em `programs/development.nix`). Para aplicar apenas no próximo boot, sem interromper a sessão atual:
 
 ```sh
 sudo nixos-rebuild boot --flake /home/geko/Documentos/geko-nix#niri

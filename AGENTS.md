@@ -1,6 +1,6 @@
 # Mapa do repositório geko-nix (para agentes)
 
-Flake NixOS 26.05 de uma máquina só (usuário `geko`, NVIDIA + AMD CPU, btrfs). Um sistema, vários **perfis de desktop**, escolhidos pela configuração do flake. Idioma do projeto: pt-BR.
+Flake NixOS unstable de uma máquina só (usuário `geko`, NVIDIA + AMD CPU, btrfs). Um sistema, vários **perfis de desktop**, escolhidos pela configuração do flake. Idioma do projeto: pt-BR.
 
 > Gerado por análise em 2026-10-03 (branch `desktop-profiles`, com mudanças não commitadas). Confira o código antes de confiar em detalhes finos.
 
@@ -18,6 +18,7 @@ Flake NixOS 26.05 de uma máquina só (usuário `geko`, NVIDIA + AMD CPU, btrfs)
 Comandos úteis:
 - Só construir: `nix build .#nixosConfigurations.nixos.config.system.build.toplevel`
 - Aplicar: `nixos-rebuild switch --flake .#<perfil>` ou `nh os switch -H <perfil>`
+- Check de programas: `nix build --no-link .#checks.x86_64-linux.software --no-update-lock-file`
 - Checks (VMs do Honey): `nix build --no-link .#checks.x86_64-linux.honey-{pleamar,pleamar-core,niri,hyprland}`
 - Atualizar um input: `nix flake update <input>`
 - Testes Python do Honey: em `pkgs/honey-shell/source/`, `python3 -m unittest discover tests`
@@ -26,25 +27,27 @@ Comandos úteis:
 ## 2. Flake e núcleo NixOS
 
 - `flake.nix`: função `mkDesktop <perfil>` monta tudo. `specialArgs = { inputs, unstablePkgs, desktopPkgs, desktopProfile }`.
-  - `nixosConfigurations`: `nixos` e `serpantinum` (idênticos), `pleamar`, `niri`, `hyprland`.
+  - `nixosConfigurations`: `nixos` e `serpantinum` (idênticos), `pleamar`, `niri`, `hyprland`, `cosmic`.
   - `checks.x86_64-linux`: `honey-pleamar`, `honey-pleamar-core` (sem captura), `honey-niri`, `honey-hyprland`.
-  - Não há `packages` nem overlays. Pacotes próprios entram por `callPackage`/`import`.
+  - `packages.x86_64-linux` expõe `universal-modder`, `rea`, `ghidra-mcp` e `ida-mcp` (`pkgs/game-modding/`). Não há overlays. Pacotes próprios entram por `callPackage`/`import`.
   - O mapa de perfis está duplicado (if/else em `mkDesktop` e a lista de `nixosConfigurations`). Perfil novo exige os dois.
-- Módulos comuns (todos os perfis): nix-flatpak, home-manager, `configuration.nix`, `modules/core`, `nvidia-desktop`, `docker`, `desktop/options`, `desktop/gaming`, os cinco arquivos de `programs/`, e um bloco inline do home-manager (`useGlobalPkgs`, `useUserPackages`, `backupFileExtension="before-geko-nix"`, `users.geko = import ./home`).
-- Inputs: `nixpkgs` (nixos-26.05), `home-manager` (release-26.05), `nixpkgs-unstable` (como `unstablePkgs`), `desktopPkgs` (= nixpkgs fixado pelo `serpantinum`; fornece hyprland e portal-hyprland), `serpantinum`, `pleamar-wm` (+ `marea`), `chatgpt-desktop-app`, `claude-desktop-app`, `nix-flatpak`, `astrovim` (`flake=false`). Vários pinados por rev.
+- Módulos comuns (todos os perfis): nix-flatpak, home-manager, `configuration.nix`, `modules/core`, `nvidia-desktop`, `homelab`, `desktop/options`, `programs/default.nix`, e um bloco inline do home-manager (`useGlobalPkgs`, `useUserPackages`, `backupFileExtension="before-geko-nix"`, `users.geko = import ./home`).
+- Inputs: `nixpkgs` (nixos-unstable), `home-manager` (master), `nixpkgs-unstable` (alias do principal), `desktopPkgs` (= `unstablePkgs`; fornece hyprland e portal-hyprland), `serpantinum`, `pleamar-wm` (+ `marea`), `chatgpt-desktop-app`, `claude-desktop-app`, `nix-flatpak`, `astrovim` (`flake=false`). Vários pinados por rev.
 - Arquivos:
   - `configuration.nix`: boot, rede, locale pt_BR, SDDM, pipewire, CUPS, i2c, usuário `geko`, `stateVersion` 26.05. `hardware-configuration.nix` é gerado, não editar.
   - `modules/core/default.nix`: fish, nix-ld, CLI, `system.autoUpgrade` (04:40, `operation=boot`, reescreve `flake.lock`), `programs.nh` (flake fixo em `/home/geko/Documentos/geko-nix`).
   - `modules/services/homelab.nix`: modo servidor caseiro (Tailscale + SSH só por chave), **desligado por padrão**; liga com `geko.homelab.enable = true` e `geko.homelab.ssh.authorizedKeys`, firewall abre só a porta 22 em `tailscale0`.
   - `modules/hardware/nvidia-desktop.nix`: tudo em `mkDefault`. `modules/services/docker.nix`: autoPrune `--all` e grupo docker (equivale a root).
-  - `programs/`: `stables` (neovim AstroNvim, ddcutil, nautilus), `unstables` (brave-origin, codex, claude-code, obsidian e apps de flake), `development`, `faculdade` (JDK21, netbeans, sqldeveloper), `flatpaks` (Stremio). Jogos ficam em `modules/desktop/gaming.nix` (options `mySystem.gaming.*`, defaults da máquina e Protons com hash fixo).
+  - `programs/default.nix`: importa `user.nix`, `flatpak.nix` e as categorias `gaming.nix`, `office.nix`, `development.nix`, `studio.nix`. Opções `software.<category>.{enable,apps,extraPackages}`; todas desligadas por padrão. Listas explícitas substituem os defaults; enums rejeitam nomes inválidos sem forçar pacotes não selecionados.
+  - `programs/user.nix`: escolhas pessoais explícitas, apps externos, KVM do Claude Desktop e imports pessoais AstroNvim/skills condicionados às seleções. Aplicativos comuns vão ao Home Manager. `programs/proton.nix` guarda hashes existentes; Steam/Java/controles/firewall são integrações NixOS. Docker é importado por development e exige `enable` + `docker.enable`.
+  - `programs/flatpak.nix`: união deduplicada dos IDs pessoais e das categorias, instalação de sistema, sem remover apps manuais. Catálogos e regras equivalentes em `docs/software.md` e `docs/software.pt-BR.md`; validação em `docs/software-validation.md` e `tests/software.nix` (`checks.x86_64-linux.software` e `software-personal`).
   - `pkgs/pleamar-wm.nix`: `overrideAttrs` com o patch de framebuffer. Atualizar o pin pode quebrar o patch.
-- Options próprias: `geko.desktop.{terminal,fileManager,clipboard.enable}` (`modules/desktop/options.nix`) e `mySystem.gaming.*` (`modules/desktop/gaming.nix`).
-- Onde adicionar: pacote estável em `programs/stables.nix` ou `development.nix`; unstable em `programs/unstables.nix`; flatpak em `programs/flatpaks.nix`; serviço em novo `modules/services/x.nix` listado em `flake.nix`; pacote customizado em `pkgs/` com `callPackage`.
+- Options próprias: `geko.desktop.{terminal,fileManager,clipboard.enable}` (`modules/desktop/options.nix`) e `software.*` (`programs/`). O namespace antigo de jogos foi removido.
+- Onde adicionar: escolha pessoal em `programs/user.nix`; app reutilizável no catálogo lazy da categoria; Flatpak em `software.flatpak.packages`; pacote próprio em `pkgs/` com `callPackage`. Atualize ambos os guias ao mudar o catálogo. Não atualize o lock durante refatorações. Componentes essenciais de sessão/hardware ficam fora das categorias.
 - Gotchas:
   - Hash fixo (Proton, sqldeveloper): atualizar `version`, `url` e `hash` juntos.
   - Um backup `*.before-geko-nix` já existente bloqueia a ativação do home-manager.
-  - O `README.md` está defasado: diz que não há autoupdate e que o Pleamar usa `withMarea=true`, mas o código tem autoUpgrade e `withMarea=false`.
+  - O autoupdate prepara o próximo boot; builds manuais de validação não ativam nem atualizam o lock.
 
 ## 3. Desktop e home-manager
 
@@ -54,16 +57,18 @@ Comandos úteis:
 | `pleamar` | `desktops/pleamar.nix` | no mesmo arquivo (parte 2) | pleamar-wm (`withMarea=false`) |
 | `niri` | `desktops/niri-honey.nix` | no mesmo arquivo (parte 2) | niri (unstable) |
 | `hyprland` | `desktops/hyprland-honey.nix` | no mesmo arquivo (parte 2) | Hyprland puro |
+| `cosmic` | `desktops/cosmic.nix` | só o Home comum (`home/default.nix`) | COSMIC (cosmic-greeter; SDDM desligado) |
 
 - Não existe option de perfil. O perfil é a escolha do alvo do flake.
+- `cosmic` não importa Honey. Liga `services.desktopManager.cosmic` e `services.displayManager.cosmic-greeter`, e força `services.displayManager.sddm.enable = false`. Ajustes de painel, tema e monitor persistem em `~/.config/cosmic/`.
 - `pleamar`, `niri` e `hyprland` são perfis "Honey": importam `desktops/_comum-honey.nix` (pam swaylock, fontes, dconf; upower/keyring/polkit vêm de `desktops/_comum.nix`) e ligam `programs.honeyShell` (`home/honey.nix`) com `settings.compositor`. O `home/honey.nix` define os serviços de usuário `honey-{reserve,shell,wallpaper,polkit,sleep-lock}` (as notificações são do próprio shell; o mako foi removido) no `honey-session.target`, além do swaylock em âmbar.
-- Cada arquivo de `desktops/` tem a parte de sistema e, abaixo, `home-manager.users.${config.geko.usuario.nome} = { ... }` (a opção `geko.usuario.nome`, padrão `geko`, vem de `modules/core/usuario.nix`). Nos módulos home só `inputs` está disponível como specialArg.
-- `home/default.nix`: importa `fish.nix`, `stateVersion`, `mcp-nixos`, AstroNvim de `inputs.astrovim` (com `substituteInPlace`).
+- Cada arquivo de `desktops/` tem a parte de sistema e, abaixo, `home-manager.users.${config.geko.usuario.nome} = { ... }` (a opção `geko.usuario.nome`, padrão `geko`, vem de `modules/core/usuario.nix`), exceto `cosmic.nix`, que só usa o Home comum. Nos módulos home só `inputs` está disponível como specialArg.
+- `home/default.nix`: identidade, `stateVersion`, Fish e GTK. AstroNvim (`home/astronvim.nix`), skills do Claude (`home/claude-code.nix`) e ferramentas de mods (`home/game-modding.nix`) são imports pessoais em `programs/user.nix`; `mcp-nixos` está na lista pessoal. O módulo de mods instala 11 skills globais em `~/.agents/skills/` e mescla MCPs no Codex com `mutableSettings`; detalhes em `docs/game-modding.md`.
 - `config/`: `fish/config.fish` (`readFile` em `home/fish.nix`), `starship.toml`, `hyprland/serpantinum.lua` (`readFile` em `desktops/serpantinum.nix`, vira `~/.config/hypr/hyprland.lua`). Os perfis Honey NÃO usam `config/`: geram tudo inline em `desktops/*-honey.nix` e `desktops/pleamar.nix`. O pleamar gera `~/.config/pleamar/{keys.conf,session.conf,autostart,wm}`.
 - Onde mexer:
   - **Keybinds**: serpantinum em `config/hyprland/serpantinum.lua` e `execbind` em `desktops/serpantinum.nix`; Honey em `desktops/{hyprland-honey,niri-honey,pleamar}.nix`. A tabela de teclas de mídia é única (`desktops/media-keys.nix`); os atalhos `honeyctl toggle ...`, `lock` e `screenshot` estão repetidos nos 3 arquivos (formatos diferentes) e precisam ser sincronizados à mão.
   - **Cores/tema**: âmbar espalhado em `honey.nix`, `pleamar.nix` (substituições no `session.plm`), `niri.nix` (`focus-ring`) e `hyprland.nix` (`col.active_border`). O tema do shell vem da config do Honey (seção 4).
-  - **Monitor**: DP-1 `1920x1080@165.003`, escala 1.25, em cada perfil. O valor precisa bater exatamente com o modo, senão o niri cai para 60 Hz.
+  - **Monitor**: DP-1 `1920x1080@165.003`, escala 1.25, nos perfis de compositor. O valor precisa bater exatamente com o modo, senão o niri cai para 60 Hz. No COSMIC isso se ajusta em Configurações e fica em `~/.config/cosmic/`.
 - Gotchas:
   - `honey.nix` fixa kitty e nautilus e ignora `geko.desktop.terminal` e `fileManager`. Só o Serpantinum consome essas options.
   - `serpantinum.nix` e `hyprland.nix` definem ambos `programs.hyprland`. Nunca importar os dois juntos.
@@ -144,7 +149,7 @@ Antes de carregar um shell novo (`pleamar --scene ...`), mate o antigo: `systemc
 
 ## 6. Estado atual e pendências conhecidas
 
-- Não commitado: `flake.nix` (input `claude-desktop-app`, `desktopProfile`), `modules/core` (autoUpgrade), `desktops/pleamar.nix` (mapa de portais), modo `@165.003` nos home Honey, `pkgs/honey-shell/**` (com testes novos), `programs/unstables.nix`, `flake.lock`, `docs/updates-and-claude.md` (untracked).
-- `README.md` e `reference.md` (cabeçalho "version 0.1") estão defasados.
+- Não commitado: `flake.nix` (input `claude-desktop-app`, `desktopProfile`), `modules/core` (autoUpgrade), `desktops/pleamar.nix` (mapa de portais), modo `@165.003` nos home Honey, `pkgs/honey-shell/**` (com testes novos), `programs/`, `flake.lock`, `docs/updates-and-claude.md` (untracked).
+- `reference.md` (cabeçalho "version 0.1") está defasado. README e guias de programas foram atualizados nesta migração.
 - Estrutura reorganizada na branch `refactor/estrutura-iniciante` (pasta `desktops/`, opção `geko.usuario.nome`).
 - Existem symlinks `result*` na raiz (artefatos de build, não editar).

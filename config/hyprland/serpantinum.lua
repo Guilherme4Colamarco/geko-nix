@@ -25,6 +25,7 @@ execbind("SUPER + W", "serpantinum msg toggle wallpaper")
 execbind("SUPER + V", "serpantinum msg toggle volume")
 execbind("SUPER + H", "serpantinum msg toggle guide")
 execbind("SUPER + L", "serpantinum lock")
+-- Os atalhos Print são acrescentados pelo Home Manager com as dependências da captura.
 hl.bind("SUPER + Left", hl.dsp.focus({ direction = "left" }))
 hl.bind("SUPER + Right", hl.dsp.focus({ direction = "right" }))
 hl.bind("SUPER + Up", hl.dsp.focus({ direction = "up" }))

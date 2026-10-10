@@ -14,9 +14,6 @@ in {
   # Use pkgs.nunito, não "Nunito" no google-fonts: aquele também instala um
   # Nunito-Regular.ttf de teste e duas faces 400 deixam o matching ambíguo.
   fonts.packages = [ pkgs.nunito fredoka ];
-  # gtk.font do home-manager grava org.gnome.desktop.interface no dconf; sem o serviço
-  # a ativação do home-manager inteira falha (visto na VM do perfil pleamar).
-  programs.dconf.enable = true;
   # sans-serif do sistema (GTK, Qt, niri, swaylock). Monospace e serif
   # continuam nos defaults do NixOS (DejaVu), então terminais não mudam.
   fonts.fontconfig.defaultFonts.sansSerif = [ "Nunito" "DejaVu Sans" ];

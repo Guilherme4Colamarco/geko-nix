@@ -1,4 +1,4 @@
-# Home Manager: módulo programs.honeyShell (shell Honey), serviços de usuário, tema GTK,
+# Home Manager: módulo programs.honeyShell (shell Honey), serviços de usuário,
 # cursor e swaylock. Usado pelos perfis pleamar, niri e hyprland.
 { config, lib, pkgs, inputs, ... }:
 let
@@ -26,10 +26,7 @@ in {
     };
     home.packages = [ honey pkgs.kitty pkgs.nautilus pkgs.playerctl ];
     home.pointerCursor = { package = pkgs.adwaita-icon-theme; name = "Adwaita"; size = 35; gtk.enable = true; };
-    # Fonte de UI dos apps GTK 2/3/4 (settings.ini) e do dconf
-    # org.gnome.desktop.interface font-name, que libadwaita lê pelo portal.
-    # O pacote vem de fonts.packages em desktops/_comum-honey.nix.
-    gtk = { enable = true; font = { name = "Nunito"; size = 11; }; };
+    # A aparência GTK comum fica em home/gtk.nix.
     # Hoje settings.ini é um arquivo solto e somente leitura; force evita que um backup
     # *.before-geko-nix antigo bloqueie a ativação do home-manager.
     xdg.configFile."gtk-3.0/settings.ini".force = true;
