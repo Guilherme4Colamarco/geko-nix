@@ -3,6 +3,8 @@
 { config, lib, pkgs, ... }:
 
 {
+  environment.systemPackages = [ pkgs.ddcutil pkgs.ddcui ];
+
   # --- GPU NVIDIA dedicada ---
   services.xserver.videoDrivers = [ "nvidia" ];
 

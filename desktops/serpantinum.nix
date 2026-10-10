@@ -3,6 +3,10 @@
 { config, lib, pkgs, desktopPkgs, inputs, ... }: let
   cfg = config.geko.desktop;
   command = value: builtins.toJSON value;
+  screenshot = pkgs.writeShellScript "serpantinum-screenshot" ''
+    export PATH="${lib.makeBinPath [ pkgs.pulseaudio ]}:$PATH"
+    exec serpantinum screenshot "$@"
+  '';
 in {
   imports = [ inputs.serpantinum.nixosModules.default ./_comum.nix ];
   programs.serpantinum.enable = true;
@@ -17,6 +21,9 @@ in {
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
   home-manager.users.${config.geko.usuario.nome} = {
     imports = [ inputs.serpantinum.homeManagerModules.default ];
+    # O script de captura exige pactl, inclusive no modo de imagem.
+    # Apenas instala o cliente; o servidor de áudio continua sendo PipeWire.
+    home.packages = [ pkgs.pulseaudio ];
     programs.serpantinum = {
       enable = true;
       systemd.target = "hyprland-session.target";
@@ -28,6 +35,10 @@ in {
     xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../config/hyprland/serpantinum.lua + ''
       execbind("SUPER + RETURN", ${command (lib.getExe cfg.terminal)})
       execbind("SUPER + E", ${command (lib.getExe cfg.fileManager)})
+      execbind("Print", ${command "${screenshot}"})
+      execbind("SHIFT + Print", ${command "${screenshot} --edit"})
+      execbind("SUPER + Print", ${command "${screenshot} --full"})
+      execbind("SUPER + SHIFT + Print", ${command "${screenshot} --full --edit"})
       hl.on("hyprland.start", function()
         hl.exec_cmd("${pkgs.dbus}/bin/dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP XDG_SESSION_TYPE")
         hl.exec_cmd("${pkgs.systemd}/bin/systemctl --user import-environment DISPLAY WAYLAND_DISPLAY HYPRLAND_INSTANCE_SIGNATURE XDG_CURRENT_DESKTOP; ${pkgs.systemd}/bin/systemctl --user stop hyprland-session.target; ${pkgs.systemd}/bin/systemctl --user start hyprland-session.target")

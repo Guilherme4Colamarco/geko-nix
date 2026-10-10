@@ -1,22 +1,31 @@
 # Ponto de entrada. Declara as entradas (inputs), monta o sistema de cada perfil
-# (nixos, serpantinum, pleamar, niri, hyprland) e os testes de VM do Honey (checks).
+# (nixos, serpantinum, pleamar, niri, hyprland, cosmic) e os testes de VM do Honey (checks).
 {
   description = "NixOS do geko com desktop modular Serpantinum";
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-26.05";
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Alias mantido para os módulos e flakes que já usam esse nome.
+    nixpkgs-unstable.follows = "nixpkgs";
     nix-flatpak.url = "github:gmodena/nix-flatpak";
     home-manager = {
-      url = "github:nix-community/home-manager/release-26.05";
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     chatgpt-desktop-app = {
-      url = "github:poeck/chatgpt-desktop-app-nix-flake/d23d08e1275566612fbac7487f18771dde415af2";
+      url = "github:poeck/chatgpt-desktop-app-nix-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
     };
     claude-desktop-app = {
       url = "github:poeck/claude-desktop-nix-flake";
       inputs.nixpkgs.follows = "nixpkgs-unstable";
+    };
+    nur = {
+      url = "github:nix-community/NUR";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    nix-index-database = {
+      url = "github:nix-community/nix-index-database";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
     ecc = {
       url = "github:affaan-m/ECC/ef648e01899ba3e8dc6371642deaaf64b4477775";
@@ -36,13 +45,14 @@
   outputs = inputs@{ nixpkgs, home-manager, nix-flatpak, serpantinum, ... }: let
     system = "x86_64-linux";
     unstablePkgs = import inputs.nixpkgs-unstable { inherit system; config.allowUnfree = true; };
-    desktopPkgs = import serpantinum.inputs.nixpkgs { inherit system; config.allowUnfree = true; };
+    desktopPkgs = unstablePkgs;
     # Cada perfil de desktop é um arquivo em desktops/ (sistema + usuário juntos).
     desktops = {
       serpantinum = ./desktops/serpantinum.nix;
       pleamar = ./desktops/pleamar.nix;
       niri = ./desktops/niri-honey.nix;
       hyprland = ./desktops/hyprland-honey.nix;
+      cosmic = ./desktops/cosmic.nix;
     };
     mkDesktop = desktop: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -53,16 +63,12 @@
         ./configuration.nix
         ./modules/core
         ./modules/core/usuario.nix
+        ./modules/core/comunidade.nix
         ./modules/hardware/nvidia-desktop.nix
-        ./modules/services/docker.nix
         ./modules/services/homelab.nix
+        ./modules/services/ghidra-mcp.nix
         ./modules/desktop/options.nix
-        ./modules/desktop/gaming.nix
-        ./programs/stables.nix
-        ./programs/unstables.nix
-        ./programs/development.nix
-        ./programs/flatpaks.nix
-        ./programs/faculdade.nix
+        ./programs
         ({ config, ... }: {
           home-manager.useGlobalPkgs = true;
           home-manager.useUserPackages = true;
@@ -73,17 +79,28 @@
       ] ++ [ desktops.${desktop} ];
     };
   in {
+    packages.${system} = let
+      modTools = unstablePkgs.callPackage ./pkgs/game-modding { };
+    in {
+      inherit (modTools) universal-modder rea ghidra-mcp ida-mcp;
+    };
     checks.${system} = nixpkgs.lib.genAttrs [ "honey-pleamar" "honey-pleamar-core" "honey-niri" "honey-hyprland" ] (name:
       import ./tests/honey-vm.nix {
         pkgs = nixpkgs.legacyPackages.${system};
         inherit inputs desktopPkgs unstablePkgs;
         compositor = if name == "honey-pleamar-core" then "pleamar" else nixpkgs.lib.removePrefix "honey-" name;
         requireCapture = name != "honey-pleamar-core";
-      });
+      }) // {
+        software = import ./tests/software.nix { inherit inputs; pkgs = unstablePkgs; };
+        software-personal = import ./tests/software-personal.nix {
+          pkgs = unstablePkgs; configuration = mkDesktop "serpantinum";
+        };
+      };
     nixosConfigurations.nixos = mkDesktop "serpantinum";
     nixosConfigurations.serpantinum = mkDesktop "serpantinum";
     nixosConfigurations.pleamar = mkDesktop "pleamar";
     nixosConfigurations.niri = mkDesktop "niri";
     nixosConfigurations.hyprland = mkDesktop "hyprland";
+    nixosConfigurations.cosmic = mkDesktop "cosmic";
   };
 }

@@ -9,7 +9,7 @@ in {
   programs.nix-ld.enable = true;
   environment.systemPackages = with pkgs; [
     ntfs3g exfatprogs dosfstools rsync gparted git micro zoxide tree
-    bat eza starship fzf atuin direnv yazi age trashy btop fd wget curl jq socat
+    bat eza starship fzf atuin yazi age trashy btop fd wget curl jq socat
   ];
   boot.loader.systemd-boot.configurationLimit = 10;
   nix.settings.auto-optimise-store = true;
@@ -24,9 +24,9 @@ in {
     upgrade = false;
     flags = [
       "--update-input" "nixpkgs"
-      "--update-input" "nixpkgs-unstable"
       "--update-input" "home-manager"
       "--update-input" "claude-desktop-app"
+      "--update-input" "chatgpt-desktop-app"
     ];
   };
   programs.nh = {
