@@ -21,6 +21,9 @@
     # Chaveiro do GNOME, usado pelos apps de sessão.
     gnome-keyring
     solaar
+    # Parear controle de PS3 (DualShock 3): grava o endereço do adaptador via USB.
+    sixpair
+    bluetuith
     browsers
   ];
 }
