@@ -9,7 +9,7 @@ Flake NixOS 26.05 de uma máquina só (usuário `geko`, NVIDIA + AMD CPU, btrfs)
 | Área | Onde | Detalhe |
 |---|---|---|
 | Flake, núcleo, programas | `flake.nix`, `configuration.nix`, `modules/{core,hardware,services}`, `programs/` | seção 2 |
-| Desktop e home-manager | `modules/desktop/`, `home/`, `config/` | seção 3 |
+| Desktop e home-manager | `desktops/`, `home/`, `config/` | seção 3 |
 | Honey shell (Python e pacote) | `pkgs/honey-shell/` | seção 4 |
 | Honey UI (pleamar `.plm`/`.luau`) | `pkgs/honey-shell/source/src/`, `docs/pleamar/` | seção 5 |
 | Pacotes soltos | `pkgs/{sqldeveloper,pleamar-wm}.nix`, `pkgs/pleamar-linear-framebuffer.patch` | seção 2 |
@@ -50,18 +50,18 @@ Comandos úteis:
 
 | Perfil (`.#X`) | Módulo NixOS | Home | Sessão |
 |---|---|---|---|
-| `nixos`/`serpantinum` | `modules/desktop/serpantinum.nix` | inline no módulo (usa `inputs.serpantinum.homeManagerModules.default`) | Hyprland (`desktopPkgs`) com shell Serpantinum |
-| `pleamar` | `modules/desktop/pleamar.nix` | `home/desktop/pleamar.nix` | pleamar-wm (`withMarea=false`) |
-| `niri` | `modules/desktop/niri.nix` | `home/desktop/niri.nix` | niri (unstable) |
-| `hyprland` | `modules/desktop/hyprland.nix` | `home/desktop/hyprland.nix` | Hyprland puro |
+| `nixos`/`serpantinum` | `desktops/serpantinum.nix` | inline no mesmo arquivo (usa `inputs.serpantinum.homeManagerModules.default`) | Hyprland (`desktopPkgs`) com shell Serpantinum |
+| `pleamar` | `desktops/pleamar.nix` | no mesmo arquivo (parte 2) | pleamar-wm (`withMarea=false`) |
+| `niri` | `desktops/niri-honey.nix` | no mesmo arquivo (parte 2) | niri (unstable) |
+| `hyprland` | `desktops/hyprland-honey.nix` | no mesmo arquivo (parte 2) | Hyprland puro |
 
 - Não existe option de perfil. O perfil é a escolha do alvo do flake.
-- `pleamar`, `niri` e `hyprland` são perfis "Honey": importam `honey-common.nix` (upower, keyring, polkit, pam swaylock, i2c/ddcutil) e ligam `programs.honeyShell` (`home/desktop/honey.nix`) com `settings.compositor`. O `honey.nix` define os serviços de usuário `honey-{reserve,shell,wallpaper,polkit,sleep-lock}` (as notificações são do próprio shell; o mako foi removido) no `honey-session.target`, além do swaylock em âmbar.
-- Cada módulo NixOS de perfil adiciona seu lado home com `home-manager.users.geko.imports = [ ../../home/desktop/<perfil>.nix ]`. Nos módulos home só `inputs` está disponível como specialArg.
+- `pleamar`, `niri` e `hyprland` são perfis "Honey": importam `desktops/_comum-honey.nix` (pam swaylock, fontes, dconf; upower/keyring/polkit vêm de `desktops/_comum.nix`) e ligam `programs.honeyShell` (`home/honey.nix`) com `settings.compositor`. O `home/honey.nix` define os serviços de usuário `honey-{reserve,shell,wallpaper,polkit,sleep-lock}` (as notificações são do próprio shell; o mako foi removido) no `honey-session.target`, além do swaylock em âmbar.
+- Cada arquivo de `desktops/` tem a parte de sistema e, abaixo, `home-manager.users.${config.geko.usuario.nome} = { ... }` (a opção `geko.usuario.nome`, padrão `geko`, vem de `modules/core/usuario.nix`). Nos módulos home só `inputs` está disponível como specialArg.
 - `home/default.nix`: importa `fish.nix`, `stateVersion`, `mcp-nixos`, AstroNvim de `inputs.astrovim` (com `substituteInPlace`).
-- `config/`: `fish/config.fish` (`readFile` em `home/fish.nix`), `starship.toml`, `hyprland/serpantinum.lua` (`readFile` em `modules/desktop/serpantinum.nix`, vira `~/.config/hypr/hyprland.lua`). Os perfis Honey NÃO usam `config/`: geram tudo inline em `home/desktop/*.nix`. O pleamar gera `~/.config/pleamar/{keys.conf,session.conf,autostart,wm}`.
+- `config/`: `fish/config.fish` (`readFile` em `home/fish.nix`), `starship.toml`, `hyprland/serpantinum.lua` (`readFile` em `desktops/serpantinum.nix`, vira `~/.config/hypr/hyprland.lua`). Os perfis Honey NÃO usam `config/`: geram tudo inline em `desktops/*-honey.nix` e `desktops/pleamar.nix`. O pleamar gera `~/.config/pleamar/{keys.conf,session.conf,autostart,wm}`.
 - Onde mexer:
-  - **Keybinds**: serpantinum em `config/hyprland/serpantinum.lua` e `execbind` em `modules/desktop/serpantinum.nix`; Honey em `home/desktop/{hyprland,niri,pleamar}.nix`. Teclas de mídia e atalhos `honeyctl toggle ...`, `lock` e `screenshot` estão repetidos nos 3 arquivos e precisam ser sincronizados à mão.
+  - **Keybinds**: serpantinum em `config/hyprland/serpantinum.lua` e `execbind` em `desktops/serpantinum.nix`; Honey em `desktops/{hyprland-honey,niri-honey,pleamar}.nix`. A tabela de teclas de mídia é única (`desktops/media-keys.nix`); os atalhos `honeyctl toggle ...`, `lock` e `screenshot` estão repetidos nos 3 arquivos (formatos diferentes) e precisam ser sincronizados à mão.
   - **Cores/tema**: âmbar espalhado em `honey.nix`, `pleamar.nix` (substituições no `session.plm`), `niri.nix` (`focus-ring`) e `hyprland.nix` (`col.active_border`). O tema do shell vem da config do Honey (seção 4).
   - **Monitor**: DP-1 `1920x1080@165.003`, escala 1.25, em cada perfil. O valor precisa bater exatamente com o modo, senão o niri cai para 60 Hz.
 - Gotchas:
@@ -128,7 +128,7 @@ Shell de desktop (launcher, clipboard, controles, tray, power, relógio; o corpo
   - `model` tem `max` fixo (`hits max 7` = `fact.capacity`; `traymini` e `icons` têm `max 5`).
   - Em sliders, mantenha `pointer.x` inline.
   - Posições dependem de `centralx`/`centralw` (o notch) e de `compact` (ww < 1400). `sidex`, `trayx` e `rightx` são derivados da gota central.
-  - Texto em pt-BR. Fontes: `family: "Nunito"` no texto de UI (peso 600 em texto pequeno) e `family: "Fredoka"` só em títulos e nos dígitos do relógio (um dígito por `text`, dígitos proporcionais). `family:` só aceita string literal (não aceita `let`), e nome errado não falha no `--check`: `tests/test_fonts.py` cobre isso. As fontes vêm de `modules/desktop/honey-common.nix`.
+  - Texto em pt-BR. Fontes: `family: "Nunito"` no texto de UI (peso 600 em texto pequeno) e `family: "Fredoka"` só em títulos e nos dígitos do relógio (um dígito por `text`, dígitos proporcionais). `family:` só aceita string literal (não aceita `let`), e nome errado não falha no `--check`: `tests/test_fonts.py` cobre isso. As fontes vêm de `desktops/_comum-honey.nix`.
 - Onde editar:
   - **bar/relógio**: `honey.plm`.
   - **launcher**: `honey.plm`, `result.plm` e as funções `search`/`activate` em `honey.luau`.
@@ -144,6 +144,7 @@ Antes de carregar um shell novo (`pleamar --scene ...`), mate o antigo: `systemc
 
 ## 6. Estado atual e pendências conhecidas
 
-- Não commitado: `flake.nix` (input `claude-desktop-app`, `desktopProfile`), `modules/core` (autoUpgrade), `modules/desktop/pleamar.nix` (mapa de portais), modo `@165.003` nos home Honey, `pkgs/honey-shell/**` (com testes novos), `programs/unstables.nix`, `flake.lock`, `docs/updates-and-claude.md` (untracked).
+- Não commitado: `flake.nix` (input `claude-desktop-app`, `desktopProfile`), `modules/core` (autoUpgrade), `desktops/pleamar.nix` (mapa de portais), modo `@165.003` nos home Honey, `pkgs/honey-shell/**` (com testes novos), `programs/unstables.nix`, `flake.lock`, `docs/updates-and-claude.md` (untracked).
 - `README.md` e `reference.md` (cabeçalho "version 0.1") estão defasados.
+- Estrutura reorganizada na branch `refactor/estrutura-iniciante` (pasta `desktops/`, opção `geko.usuario.nome`).
 - Existem symlinks `result*` na raiz (artefatos de build, não editar).
