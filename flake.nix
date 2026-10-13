@@ -55,10 +55,16 @@
       url = "github:natepayn3/Vitreus/12901750df6f23298eac63eba45a0be1d5182e1f";
       flake = false;
     };
-    pleamar-vitreus.url = "github:k4ditano/pleamar/c391920edb35314251835527c4410bb60fa56d33"; # 0.3.6
+    # Seguem o nixpkgs do sistema: com um nixpkgs próprio, o pleamar vem com outra glibc e não
+    # consegue carregar os módulos do PAM do sistema (pam_unix.so), e a tela de bloqueio nunca aceita a senha.
+    pleamar-vitreus = {
+      url = "github:k4ditano/pleamar/c391920edb35314251835527c4410bb60fa56d33"; # 0.3.6
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     pleamar-wm-vitreus = {
       url = "github:k4ditano/pleamar-wm/e968256a2a75f2018ec6c601b1818c81f1965306"; # 0.3.13
       inputs.pleamar.follows = "pleamar-vitreus";
+      inputs.nixpkgs.follows = "nixpkgs";
     };
   };
   outputs = inputs@{ nixpkgs, home-manager, nix-flatpak, serpantinum, ... }: let
