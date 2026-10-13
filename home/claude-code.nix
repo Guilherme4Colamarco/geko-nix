@@ -1,4 +1,4 @@
-# Home Manager: instala as skills do Claude Code (ECC e pstack) em ~/.claude/skills.
+# Home Manager: instala as skills do Claude Code (ECC, pstack, Agent Reach e GoLive) em ~/.claude/skills.
 {
   inputs,
   lib,
@@ -27,6 +27,9 @@ in
         // {
           ".claude/skills/arena".source = "${inputs.pstack}/skills/arena";
           ".claude/skills/pstack-pi".source = "${inputs.pstack}/skills/pstack-pi";
+          # Somente as instrucoes; o CLI agent-reach e os scripts do golive nao sao instalados aqui.
+          ".claude/skills/agent-reach".source = "${inputs.agent-reach}/agent_reach/skill";
+          ".claude/skills/golive".source = "${inputs.golive-skill}/skills/golive";
         }
       );
 }

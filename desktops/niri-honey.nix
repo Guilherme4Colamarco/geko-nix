@@ -7,7 +7,7 @@
   services.displayManager.defaultSession = "niri";
 
   # ---------- Parte 2: usuário (Home Manager) ----------
-  home-manager.users.${config.geko.usuario.nome} = { config, lib, pkgs, inputs, ... }:
+  home-manager.users.${config.geko.usuario.nome} = { config, lib, pkgs, inputs, osConfig, ... }:
   let
     honey = config.programs.honeyShell.package.override { settings = config.programs.honeyShell.settings; };
     ctl = "${honey}/bin/honeyctl";
@@ -67,7 +67,7 @@
         border { off; }
         shadow { on; color "#00000044"; softness 24; spread 2; offset x=0 y=6; }
       }
-      cursor { xcursor-theme "Adwaita"; xcursor-size 35; }
+      cursor { xcursor-theme "${osConfig.geko.desktop.cursor.name}"; xcursor-size ${toString osConfig.geko.desktop.cursor.size}; }
       // O niri não tem opção de fonte: overlay de atalhos, UI de captura e avisos usam
       // pango "sans 14px", que segue fonts.fontconfig.defaultFonts (desktops/_comum-honey.nix).
       hotkey-overlay { skip-at-startup; }

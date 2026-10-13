@@ -1,5 +1,5 @@
 # Ponto de entrada. Declara as entradas (inputs), monta o sistema de cada perfil
-# (nixos, serpantinum, pleamar, niri, hyprland, cosmic) e os testes de VM do Honey (checks).
+# (nixos, serpantinum, pleamar, niri, hyprland, cosmic, mango, vitreus, vitreus-wm) e os testes de VM do Honey (checks).
 {
   description = "NixOS do geko com desktop modular Serpantinum";
   inputs = {
@@ -35,12 +35,31 @@
       url = "github:shrimpwtf/oh-my-pstack/fc0eabd25f21b194a336b640e75e29c252382866";
       flake = false;
     };
+    agent-reach = {
+      url = "github:Panniantong/Agent-Reach/94f06c1969dfc1834001269d79d3ad0972d9dee6";
+      flake = false;
+    };
+    golive-skill = {
+      url = "github:mikehasa/golive-skill/8fd3d8e96844c79c500aabaf215d1267fcde08c5";
+      flake = false;
+    };
     astrovim = { url = "github:AstroNvim/template"; flake = false; };
     pleamar-wm = {
       url = "github:k4ditano/pleamar-wm/548b3fc226e65128770eef832b26142b33e23729";
       inputs.marea.url = "github:k4ditano/marea-plm/d3c5398c99eaad9bb045d7f0838efd849fea2c6f";
     };
     serpantinum.url = "github:ilyamiro/serpantinum/225ea62e0545e25fa813d8409390d73588575b3c";
+    # Perfis vitreus e vitreus-wm. O Vitreus pede pleamar >= 0.2.9; o pin acima traz 0.2.8,
+    # então estes têm pleamar e pleamar-wm próprios e não mexem no perfil pleamar (Honey).
+    vitreus = {
+      url = "github:natepayn3/Vitreus/12901750df6f23298eac63eba45a0be1d5182e1f";
+      flake = false;
+    };
+    pleamar-vitreus.url = "github:k4ditano/pleamar/c391920edb35314251835527c4410bb60fa56d33"; # 0.3.6
+    pleamar-wm-vitreus = {
+      url = "github:k4ditano/pleamar-wm/e968256a2a75f2018ec6c601b1818c81f1965306"; # 0.3.13
+      inputs.pleamar.follows = "pleamar-vitreus";
+    };
   };
   outputs = inputs@{ nixpkgs, home-manager, nix-flatpak, serpantinum, ... }: let
     system = "x86_64-linux";
@@ -53,6 +72,9 @@
       niri = ./desktops/niri-honey.nix;
       hyprland = ./desktops/hyprland-honey.nix;
       cosmic = ./desktops/cosmic.nix;
+      mango = ./desktops/mango.nix;
+      vitreus = ./desktops/vitreus.nix;
+      vitreus-wm = ./desktops/vitreus-wm.nix;
     };
     mkDesktop = desktop: nixpkgs.lib.nixosSystem {
       inherit system;
@@ -60,14 +82,8 @@
       modules = [
         nix-flatpak.nixosModules.nix-flatpak
         home-manager.nixosModules.home-manager
-        ./configuration.nix
-        ./modules/core
-        ./modules/core/usuario.nix
-        ./modules/core/comunidade.nix
-        ./modules/hardware/nvidia-desktop.nix
-        ./modules/services/homelab.nix
-        ./modules/services/ghidra-mcp.nix
-        ./modules/desktop/options.nix
+        ./hosts/nixos
+        ./modules
         ./programs
         ({ config, ... }: {
           home-manager.useGlobalPkgs = true;
@@ -102,5 +118,8 @@
     nixosConfigurations.niri = mkDesktop "niri";
     nixosConfigurations.hyprland = mkDesktop "hyprland";
     nixosConfigurations.cosmic = mkDesktop "cosmic";
+    nixosConfigurations.mango = mkDesktop "mango";
+    nixosConfigurations.vitreus = mkDesktop "vitreus";
+    nixosConfigurations.vitreus-wm = mkDesktop "vitreus-wm";
   };
 }

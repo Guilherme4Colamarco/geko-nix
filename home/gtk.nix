@@ -13,11 +13,7 @@
       name = "WhiteSur";
     };
     font = { package = pkgs.nunito; name = "Nunito"; size = 11; };
-    cursorTheme = {
-      package = pkgs.adwaita-icon-theme;
-      name = "Adwaita";
-      size = 35;
-    };
+    # O cursor vem de home.pointerCursor (home/default.nix).
     # Apps GTK 4/libadwaita usam a preferência de cor, sem importar CSS de GTK 3.
     gtk4.theme = null;
   };

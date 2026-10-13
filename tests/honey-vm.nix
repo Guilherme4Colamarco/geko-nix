@@ -21,10 +21,10 @@ in pkgs.testers.runNixOSTest {
   name = "honey-${compositor}";
   node.specialArgs = { inherit inputs desktopPkgs unstablePkgs; };
   nodes.machine = { config, lib, pkgs, ... }: {
-    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../desktops/${perfil}.nix ];
+    imports = [ inputs.home-manager.nixosModules.home-manager ../modules/core/usuario.nix ../modules/desktop/options.nix ../desktops/${perfil}.nix ];
     virtualisation = { graphics = true; qemu.options = [ "-vga none -device virtio-gpu-pci" "-display none" ]; memorySize = 4096; cores = 4; resolution = { x = 1920; y = 1080; }; };
     hardware.graphics.enable = true;
-    hardware.i2c.enable = true; # antes vinha de desktops/_comum-honey.nix; em produção vem do configuration.nix
+    hardware.i2c.enable = true; # antes vinha de desktops/_comum-honey.nix; em produção vem de hosts/nixos/default.nix
     environment.systemPackages = [ inputs.pleamar-wm.inputs.pleamar.packages.${pkgs.stdenv.hostPlatform.system}.pleamar pkgs.wayland-utils pkgs.jq pkgs.libnotify pkgs.wl-clipboard pkgs.procps pkgs.kitty ];
     services.pipewire = { enable = true; pulse.enable = true; };
     security.rtkit.enable = true;

@@ -7,8 +7,7 @@ hl.config({
 })
 hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1.0 })
 hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "auto", scale = 1.0 })
-hl.env("XCURSOR_THEME", "Adwaita")
-hl.env("XCURSOR_SIZE", "35")
+-- O cursor (XCURSOR_*) é definido em desktops/serpantinum.nix, a partir de geko.desktop.cursor.
 
 local function execbind(keys, command)
   hl.bind(keys, hl.dsp.exec_cmd(command))

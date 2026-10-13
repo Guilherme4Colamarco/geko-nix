@@ -25,9 +25,7 @@ in
         vial
         fastfetch
         fetch
-        comma
         rmatrix
-        nix-index
         ripgrep
         ffmpeg
         mcp-nixos

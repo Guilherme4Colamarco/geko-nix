@@ -25,7 +25,6 @@ in {
       power.lock_command = lib.mkDefault [ "honeyctl" "lock" ];
     };
     home.packages = [ honey pkgs.kitty pkgs.nautilus pkgs.playerctl ];
-    home.pointerCursor = { package = pkgs.adwaita-icon-theme; name = "Adwaita"; size = 35; gtk.enable = true; };
     # A aparência GTK comum fica em home/gtk.nix.
     # Hoje settings.ini é um arquivo solto e somente leitura; force evita que um backup
     # *.before-geko-nix antigo bloqueie a ativação do home-manager.

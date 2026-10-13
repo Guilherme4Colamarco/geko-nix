@@ -5,7 +5,7 @@
   programs.pleamar-wm = {
     enable = true;
     withMarea = false;
-    package = import ../pkgs/pleamar-wm.nix { upstream = inputs.pleamar-wm.packages.${pkgs.stdenv.hostPlatform.system}.pleamar-wm; };
+    package = import ../pkgs/pleamar-wm { upstream = inputs.pleamar-wm.packages.${pkgs.stdenv.hostPlatform.system}.pleamar-wm; };
   };
   services.displayManager.defaultSession = "pleamar-wm";
   # A sessão exporta XDG_CURRENT_DESKTOP=pleamar. Sem este mapa o portal não
@@ -84,6 +84,7 @@
         keyboard layout br repeat 25 delay 400
         pointer accel flat speed 0
         touchpad natural on tap on dwt on
+        agent on
         window app=pavucontrol float size 820x560
         window title="Picture in Picture" float
       '';

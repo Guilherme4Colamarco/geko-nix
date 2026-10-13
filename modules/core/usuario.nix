@@ -1,5 +1,5 @@
 # Opção com o nome do usuário principal da máquina (padrão: geko).
-# Para trocar de usuário, defina geko.usuario.nome em configuration.nix.
+# Para trocar de usuário, defina geko.usuario.nome em hosts/nixos/default.nix.
 { lib, ... }: {
   options.geko.usuario.nome = lib.mkOption {
     type = lib.types.str;

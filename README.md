@@ -8,18 +8,19 @@ foram removidos das declarações; dados pessoais não são apagados.
 
 ## Organização
 
-- `configuration.nix`: identidade, pt-BR, São Paulo e serviços da máquina.
-- `hardware-configuration.nix`: discos/swap existentes, sem alterações.
-- `modules/core/`: ferramentas e serviços comuns, inspirados no OrbitOS, sem Orbit CLI.
+- `hosts/nixos/`: a máquina — identidade, pt-BR, São Paulo, serviços e `hardware-configuration.nix` (discos/swap, sem alterações).
+- `modules/default.nix`: lista dos módulos de sistema; módulo novo entra aqui, não no `flake.nix`.
+- `modules/core/`: ferramentas e serviços comuns, inspirados no OrbitOS, sem Orbit CLI; `appimage.nix` roda AppImage direto (`./app.AppImage`) e traz o Gear Lever.
 - `modules/hardware/nvidia-desktop.nix`: NVIDIA aberto, KMS e aceleração de vídeo.
-- `desktops/`: perfis Serpantinum, Pleamar, Niri, Hyprland e COSMIC; compositor e sessão.
+- `desktops/`: perfis Serpantinum, Pleamar, Niri, Hyprland, COSMIC e Mango; compositor e sessão.
 - `modules/desktop/options.nix`: componentes substituíveis por opções `geko.desktop`.
 - `programs/user.nix`: pacotes pessoais, Flatpaks e categorias opcionais.
 - `modules/services/docker.nix`: Engine, Compose e utilitários; sem stacks automáticas.
 - `programs/`: gaming, office, development e studio; catálogo e integrações.
 - `home/`: Home Manager, Fish e AstroNvim.
-- `config/`: Fish/Starship e atalhos Lua do Hyprland.
-- `pkgs/sqldeveloper.nix`: pacote Oracle com fonte/hash fixados e JDK 17 próprio.
+- `home/dotfiles/`: Fish/Starship e atalhos Lua do Hyprland.
+- `pkgs/sqldeveloper/`: pacote Oracle com fonte/hash fixados e JDK 17 próprio.
+- `docs/pesquisa/` e `docs/conceitos/`: relatórios, notas de pesquisa e rascunhos do shell.
 
 A base do sistema, os aplicativos e os compositores do Nixpkgs usam
 `nixos-unstable`; o Home Manager acompanha `master`. `nixpkgs-unstable` é um
@@ -74,6 +75,16 @@ os módulos comuns. Não há perfil Ryoku. O perfil Pleamar usa o módulo upstre
 do Pleamar permanecem em `~/.config/pleamar` segundo o upstream.
 O perfil COSMIC (`nh os switch -H cosmic`) usa o módulo do nixpkgs, desliga o SDDM
 e entra pelo cosmic-greeter. Painel, tema e monitor ficam em `~/.config/cosmic/`.
+
+O perfil Mango (`nh os switch -H mango`) junta o mangowm (tile, Alt+Tab com miniaturas,
+overview) com o Marea como shell, sem barra. A config fica em `desktops/mango.nix`
+e inclui ajustes para jogos na NVIDIA.
+
+O perfil Vitreus (`nh os switch -H vitreus`) é o Hyprland com o shell de vidro
+[Vitreus](https://github.com/natepayn3/Vitreus) (pleamar); `vitreus-wm` é o mesmo shell
+no pleamar-wm. O que o `install.sh` do Vitreus faz no Arch está em `desktops/_vitreus.nix`
+(pacotes, fontes, PAM, autostart) e `pkgs/vitreus/`. Atalhos: `SUPER+Space` launcher,
+`SUPER+SHIFT+Space` Settings, `SUPER+L` bloqueio, `SUPER+B` wallpapers, `SUPER+D` Desk.
 Para construir esse perfil: `nix build .#nixosConfigurations.pleamar.config.system.build.toplevel`. As configurações Lua do Hyprland
 são declarativas: editar pela interface não altera o arquivo gerado pelo HM.
 As preferências do Serpantinum são inicialmente semeadas pelo módulo upstream,

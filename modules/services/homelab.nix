@@ -1,7 +1,7 @@
 # Modo servidor caseiro: acesso remoto por Tailscale (VPN) + SSH.
 #
 # Vem DESLIGADO. Quem usa só como desktop não expõe nada na rede.
-# Para ligar, no host (ex.: configuration.nix ou um local.nix):
+# Para ligar, no host (ex.: hosts/nixos/default.nix ou um local.nix):
 #
 #   geko.homelab.enable = true;
 #   geko.homelab.ssh.authorizedKeys = [ "ssh-ed25519 AAAA... voce@aparelho" ];

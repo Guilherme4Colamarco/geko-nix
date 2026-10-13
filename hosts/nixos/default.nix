@@ -1,6 +1,6 @@
 # Configuração base da máquina: boot, rede, idioma (pt-BR), teclado, som,
 # impressão e o usuário. O que é de desktop, programas ou hardware específico
-# fica em desktops/, programs/ e modules/. Veja o README.
+# fica em desktops/, programs/ e modules/ (este arquivo é só a máquina: hosts/nixos/). Veja o README.
 { config, ... }:
 
 {

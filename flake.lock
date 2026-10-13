@@ -1,5 +1,22 @@
 {
   "nodes": {
+    "agent-reach": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791393446,
+        "narHash": "sha256-P/odFlAc9NcNsmoQc3L2DQpH3oTh9a2NsJtWzoMTYRk=",
+        "owner": "Panniantong",
+        "repo": "Agent-Reach",
+        "rev": "94f06c1969dfc1834001269d79d3ad0972d9dee6",
+        "type": "github"
+      },
+      "original": {
+        "owner": "Panniantong",
+        "repo": "Agent-Reach",
+        "rev": "94f06c1969dfc1834001269d79d3ad0972d9dee6",
+        "type": "github"
+      }
+    },
     "astrovim": {
       "flake": false,
       "locked": {
@@ -94,6 +111,23 @@
         "type": "github"
       }
     },
+    "golive-skill": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791752640,
+        "narHash": "sha256-UrSwB2ZNeI9EAvy/UsamFHinh3bdyy6VT74/VpYHqZY=",
+        "owner": "mikehasa",
+        "repo": "golive-skill",
+        "rev": "8fd3d8e96844c79c500aabaf215d1267fcde08c5",
+        "type": "github"
+      },
+      "original": {
+        "owner": "mikehasa",
+        "repo": "golive-skill",
+        "rev": "8fd3d8e96844c79c500aabaf215d1267fcde08c5",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -138,6 +172,31 @@
         "owner": "k4ditano",
         "repo": "marea-plm",
         "rev": "d3c5398c99eaad9bb045d7f0838efd849fea2c6f",
+        "type": "github"
+      }
+    },
+    "marea_2": {
+      "inputs": {
+        "nixpkgs": [
+          "pleamar-wm-vitreus",
+          "nixpkgs"
+        ],
+        "pleamar": [
+          "pleamar-wm-vitreus",
+          "pleamar"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791324272,
+        "narHash": "sha256-L3RjJb+E0cHUtg25zV6kYA7miVdjbTg/4hTUGiHzSmk=",
+        "owner": "k4ditano",
+        "repo": "marea-plm",
+        "rev": "0e23c6ce597644ba61d05a6931b9d50bdfa0d345",
+        "type": "github"
+      },
+      "original": {
+        "owner": "k4ditano",
+        "repo": "marea-plm",
         "type": "github"
       }
     },
@@ -210,6 +269,38 @@
     },
     "nixpkgs_3": {
       "locked": {
+        "lastModified": 1790463110,
+        "narHash": "sha256-hKlVl12B1dF0Q5vd9dY3lIJM5mFGWYSlXwSLAqHZ1+s=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "e158d9ed9b51c98974c5e66e1ba1c9e0255fecaa",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_4": {
+      "locked": {
+        "lastModified": 1791260994,
+        "narHash": "sha256-Miqqk/ammqnTUxaoCyvtwoPeLbI1ksFyLxi/CazZpWY=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "151fa4e8ddfdd8dd25d945ad94ed54a13de9f6e4",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
+    "nixpkgs_5": {
+      "locked": {
         "lastModified": 1790689126,
         "narHash": "sha256-ilerN1WLSvF+HMjziC/Wv99J5y02maDH+6hZPwsORKg=",
         "owner": "nixos",
@@ -266,10 +357,29 @@
         "type": "github"
       }
     },
+    "pleamar-vitreus": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1791893928,
+        "narHash": "sha256-vrDggZ95l7uJEOw6okaG4N0mxIV03ji5D0/HYk7A0x8=",
+        "owner": "k4ditano",
+        "repo": "pleamar",
+        "rev": "c391920edb35314251835527c4410bb60fa56d33",
+        "type": "github"
+      },
+      "original": {
+        "owner": "k4ditano",
+        "repo": "pleamar",
+        "rev": "c391920edb35314251835527c4410bb60fa56d33",
+        "type": "github"
+      }
+    },
     "pleamar-wm": {
       "inputs": {
         "marea": "marea",
-        "nixpkgs": "nixpkgs_2",
+        "nixpkgs": "nixpkgs_3",
         "pleamar": "pleamar"
       },
       "locked": {
@@ -284,6 +394,29 @@
         "owner": "k4ditano",
         "repo": "pleamar-wm",
         "rev": "548b3fc226e65128770eef832b26142b33e23729",
+        "type": "github"
+      }
+    },
+    "pleamar-wm-vitreus": {
+      "inputs": {
+        "marea": "marea_2",
+        "nixpkgs": "nixpkgs_4",
+        "pleamar": [
+          "pleamar-vitreus"
+        ]
+      },
+      "locked": {
+        "lastModified": 1791894120,
+        "narHash": "sha256-qUP/dNsbZ6PYKLZiocKSORPfslQrX2+TEIwmHwWhmBs=",
+        "owner": "k4ditano",
+        "repo": "pleamar-wm",
+        "rev": "e968256a2a75f2018ec6c601b1818c81f1965306",
+        "type": "github"
+      },
+      "original": {
+        "owner": "k4ditano",
+        "repo": "pleamar-wm",
+        "rev": "e968256a2a75f2018ec6c601b1818c81f1965306",
         "type": "github"
       }
     },
@@ -306,10 +439,12 @@
     },
     "root": {
       "inputs": {
+        "agent-reach": "agent-reach",
         "astrovim": "astrovim",
         "chatgpt-desktop-app": "chatgpt-desktop-app",
         "claude-desktop-app": "claude-desktop-app",
         "ecc": "ecc",
+        "golive-skill": "golive-skill",
         "home-manager": "home-manager",
         "nix-flatpak": "nix-flatpak",
         "nix-index-database": "nix-index-database",
@@ -318,14 +453,17 @@
           "nixpkgs"
         ],
         "nur": "nur",
+        "pleamar-vitreus": "pleamar-vitreus",
         "pleamar-wm": "pleamar-wm",
+        "pleamar-wm-vitreus": "pleamar-wm-vitreus",
         "pstack": "pstack",
-        "serpantinum": "serpantinum"
+        "serpantinum": "serpantinum",
+        "vitreus": "vitreus"
       }
     },
     "serpantinum": {
       "inputs": {
-        "nixpkgs": "nixpkgs_3",
+        "nixpkgs": "nixpkgs_5",
         "serpantinum-wallpapers": "serpantinum-wallpapers"
       },
       "locked": {
@@ -356,6 +494,23 @@
       "original": {
         "owner": "ilyamiro",
         "repo": "shell-wallpapers",
+        "type": "github"
+      }
+    },
+    "vitreus": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1791857669,
+        "narHash": "sha256-/mkmWU9PtTfHDdb7cGacjyZvgBcTJ3I559vEmLnRCrU=",
+        "owner": "natepayn3",
+        "repo": "Vitreus",
+        "rev": "12901750df6f23298eac63eba45a0be1d5182e1f",
+        "type": "github"
+      },
+      "original": {
+        "owner": "natepayn3",
+        "repo": "Vitreus",
+        "rev": "12901750df6f23298eac63eba45a0be1d5182e1f",
         "type": "github"
       }
     }

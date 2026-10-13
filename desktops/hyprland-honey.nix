@@ -12,7 +12,7 @@
   xdg.portal.config.hyprland.default = [ "hyprland" "gtk" ];
 
   # ---------- Parte 2: usuário (Home Manager) ----------
-  home-manager.users.${config.geko.usuario.nome} = { config, lib, pkgs, inputs, ... }:
+  home-manager.users.${config.geko.usuario.nome} = { config, lib, pkgs, inputs, osConfig, ... }:
   let
     honey = config.programs.honeyShell.package.override { settings = config.programs.honeyShell.settings; };
     ctl = "${honey}/bin/honeyctl";
@@ -41,8 +41,10 @@
         hl.monitor({ output = "", mode = "preferred", position = "auto", scale = 1.0 })
         hl.monitor({ output = "DP-1", mode = "1920x1080@165.003", position = "0x0", scale = 1.25 })
         hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "default" })
-        hl.env("XCURSOR_THEME", "Adwaita")
-        hl.env("XCURSOR_SIZE", "35")
+        hl.env("XCURSOR_THEME", ${quote osConfig.geko.desktop.cursor.name})
+        hl.env("XCURSOR_SIZE", ${quote (toString osConfig.geko.desktop.cursor.size)})
+        hl.env("HYPRCURSOR_THEME", ${quote osConfig.geko.desktop.cursor.name})
+        hl.env("HYPRCURSOR_SIZE", ${quote (toString osConfig.geko.desktop.cursor.size)})
         local function execbind(keys, command) hl.bind(keys, hl.dsp.exec_cmd(command)) end
         execbind("SUPER + RETURN", ${quote "${pkgs.kitty}/bin/kitty"})
         execbind("SUPER + E", ${quote "${pkgs.nautilus}/bin/nautilus"})

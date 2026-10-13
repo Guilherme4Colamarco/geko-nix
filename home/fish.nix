@@ -2,7 +2,7 @@
 { pkgs, ... }: {
   programs.fish = {
     enable = true;
-    interactiveShellInit = builtins.readFile ../config/fish/config.fish;
+    interactiveShellInit = builtins.readFile ./dotfiles/fish/config.fish;
     plugins = map (name: { inherit name; src = pkgs.fishPlugins.${name}.src; }) [ "autopair-fish" "done" "fzf-fish" ];
     functions = {
       mkcd = "mkdir -p -- $argv; and cd -- $argv[-1]";
@@ -17,5 +17,5 @@
       '';
     };
   };
-  xdg.configFile."starship.toml".source = ../config/starship.toml;
+  xdg.configFile."starship.toml".source = ./dotfiles/starship.toml;
 }

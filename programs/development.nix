@@ -38,7 +38,7 @@ let
     claude-code = [ pkgs.claude-code ];
     jdk21 = [ ];
     netbeans = [ pkgs.netbeans ];
-    sqldeveloper = [ (pkgs.callPackage ../pkgs/sqldeveloper.nix { }) ];
+    sqldeveloper = [ (pkgs.callPackage ../pkgs/sqldeveloper { }) ];
     dbeaver = [ pkgs.dbeaver-bin ];
     go = [ pkgs.go ];
     rust = [

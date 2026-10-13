@@ -32,7 +32,11 @@ in {
     systemd.user.targets.hyprland-session = {
       Unit = { Description = "Sessão Hyprland do geko"; BindsTo = [ "graphical-session.target" ]; Wants = [ "graphical-session-pre.target" ]; After = [ "graphical-session-pre.target" ]; };
     };
-    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../config/hyprland/serpantinum.lua + ''
+    xdg.configFile."hypr/hyprland.lua".text = builtins.readFile ../home/dotfiles/hyprland/serpantinum.lua + ''
+      hl.env("XCURSOR_THEME", ${command cfg.cursor.name})
+      hl.env("XCURSOR_SIZE", ${command (toString cfg.cursor.size)})
+      hl.env("HYPRCURSOR_THEME", ${command cfg.cursor.name})
+      hl.env("HYPRCURSOR_SIZE", ${command (toString cfg.cursor.size)})
       execbind("SUPER + RETURN", ${command (lib.getExe cfg.terminal)})
       execbind("SUPER + E", ${command (lib.getExe cfg.fileManager)})
       execbind("Print", ${command "${screenshot}"})
